@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Perfil · 10K Aniversario IMNUFIT</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">IMNU<span>FIT</span></a>
+  <div class="nav-links">
+    <a href="feed.html">Feed</a>
+    <button id="logoutBtn" class="btn-ghost btn" style="font-size:0.85rem;">Salir</button>
+  </div>
+</nav>
+
+<div class="dashboard">
+
+  <!-- PROFILE HEADER -->
+  <div class="profile-header" id="profileHeader">
+    <div class="profile-avatar av-1" id="profileAvatar">🔥</div>
+    <div>
+      <div class="profile-name" id="profileAlias">Cargando...</div>
+      <div class="profile-alias" id="profileName"></div>
+      <div class="profile-meta" id="profileMeta"></div>
+    </div>
+  </div>
+
+  <!-- BIG PROGRESS -->
+  <div class="big-progress">
+    <div class="big-km"><span id="bigKm">0.0</span><span> / 10 km</span></div>
+    <div class="big-label" style="margin-top:0.5rem">progreso del reto</div>
+    <div class="big-bar"><div class="big-fill" id="bigFill" style="width:0%"></div></div>
+    <div class="big-pct" id="bigPct">0% completado</div>
+    <div id="completedMsg" style="display:none;margin-top:1rem;padding:0.85rem;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;color:var(--green);font-weight:600;font-size:0.9rem;text-align:center;">
+      🎉 ¡Completaste el reto! Tu descuento de <strong>$50 OFF</strong> está siendo procesado.
+    </div>
+    <div id="participantMsg" style="display:none;margin-top:1rem;padding:0.85rem;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:8px;color:var(--accent);font-size:0.85rem;text-align:center;">
+      🎖️ Ya ganaste <strong>$20 OFF</strong> por participar. ¡Sigue sumando km para el $50 OFF!
+    </div>
+  </div>
+
+  <!-- UPLOAD RUN -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-title">Registrar un run 🏃</div>
+    <div class="card-sub">Sube tu evidencia para sumar kilómetros al reto</div>
+
+    <div class="alert alert-error" id="run-error"></div>
+    <div class="alert alert-success" id="run-success"></div>
+
+    <form id="runForm">
+      <div class="form-group">
+        <label class="form-label">¿Cuántos km corriste?</label>
+        <input class="form-input" type="number" id="run-km" step="0.1" min="0.1" max="42" placeholder="Ej: 3.5" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Screenshot de tu app (Nike Run, Strava, etc.)</label>
+        <div class="upload-zone" id="zone-screenshot">
+          <div class="upload-icon">📱</div>
+          <div class="upload-text">Toca para subir el <strong>screenshot</strong></div>
+          <div class="upload-preview" id="preview-screenshot"></div>
+        </div>
+        <input type="file" id="file-screenshot" accept="image/*" style="display:none">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tu selfie post-run 💪</label>
+        <div class="upload-zone" id="zone-selfie">
+          <div class="upload-icon">🤳</div>
+          <div class="upload-text">Toca para subir tu <strong>selfie</strong></div>
+          <div class="upload-preview" id="preview-selfie"></div>
+        </div>
+        <input type="file" id="file-selfie" accept="image/*" style="display:none">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="run-btn">
+        Subir mi run
+      </button>
+    </form>
+  </div>
+
+  <!-- RUN HISTORY -->
+  <div class="card">
+    <div class="card-title">Mis runs</div>
+    <div class="runs-list" id="runsList">
+      <div style="color:var(--text3);font-size:0.9rem;text-align:center;padding:1.5rem">No has subido runs todavía</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>10K Aniversario <strong>IMNUFIT</strong> · 15–19 Junio 2026</p>
+</footer>
+
+<script type="module">
+import { auth, db, CLOUDINARY_CLOUD, CLOUDINARY_PRESET } from './js/firebase-config.js';
+import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { doc, getDoc, collection, addDoc, query, where, orderBy, getDocs, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
+function getEmoji(uid) { return EMOJIS[uid.charCodeAt(0) % EMOJIS.length]; }
+function getAvClass(uid) { return 'av-' + (uid.charCodeAt(0) % 5 + 1); }
+
+let currentUser = null;
+let userData = null;
+let screenshotFile = null;
+let selfieFile = null;
+
+auth.onAuthStateChanged(async user => {
+  if (!user) { window.location.href = 'register.html'; return; }
+  currentUser = user;
+  const snap = await getDoc(doc(db, 'users', user.uid));
+  if (!snap.exists()) { window.location.href = 'register.html'; return; }
+  userData = snap.data();
+  renderProfile();
+  loadRuns();
+});
+
+function renderProfile() {
+  const uid = currentUser.uid;
+  const km = userData.totalKm || 0;
+  const pct = Math.min((km / 10) * 100, 100);
+  const done = km >= 10;
+  const hasRuns = (userData.runsCount || 0) > 0;
+
+  document.getElementById('profileAvatar').textContent = getEmoji(uid);
+  document.getElementById('profileAvatar').className = `profile-avatar ${getAvClass(uid)}`;
+  document.getElementById('profileAlias').textContent = userData.alias || 'Sin alias';
+  document.getElementById('profileName').textContent = userData.name || '';
+  document.getElementById('profileMeta').textContent = `${userData.runsCount || 0} runs · ${km.toFixed(1)} km acumulados`;
+
+  document.getElementById('bigKm').textContent = km.toFixed(1);
+  document.getElementById('bigFill').style.width = pct + '%';
+  document.getElementById('bigFill').className = 'big-fill' + (done ? ' complete' : '');
+  document.getElementById('bigPct').textContent = pct.toFixed(0) + '% completado';
+
+  if (done) {
+    document.getElementById('completedMsg').style.display = 'block';
+  } else if (hasRuns) {
+    document.getElementById('participantMsg').style.display = 'block';
+  }
+}
+
+async function loadRuns() {
+  const list = document.getElementById('runsList');
+  const q = query(collection(db, 'runs'), where('userId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  if (snap.empty) return;
+  list.innerHTML = '';
+  snap.forEach(d => {
+    const r = d.data();
+    const date = r.createdAt?.toDate();
+    const dateStr = date ? date.toLocaleDateString('es', { day:'numeric', month:'short' }) : '';
+    const statusMap = { pending: '⏳ Pendiente', approved: '✅ Aprobado', rejected: '❌ Rechazado' };
+    list.innerHTML += `
+      <div class="run-item">
+        <div class="run-icon">🏃</div>
+        <div class="run-info">
+          <div class="run-km">${r.km} km</div>
+          <div class="run-date">${dateStr}</div>
+        </div>
+        <div class="run-status">${statusMap[r.status] || '⏳'}</div>
+      </div>`;
+  });
+}
+
+// Upload zones
+function setupZone(zoneId, fileInputId, previewId, onFile) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(fileInputId);
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); const f = e.dataTransfer.files[0]; if(f) handleFile(f); });
+  input.addEventListener('change', () => { if(input.files[0]) handleFile(input.files[0]); });
+  function handleFile(f) {
+    onFile(f);
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById(previewId).innerHTML = `<img src="${ev.target.result}" alt="preview">`;
+    };
+    reader.readAsDataURL(f);
+  }
+}
+
+setupZone('zone-screenshot', 'file-screenshot', 'preview-screenshot', f => screenshotFile = f);
+setupZone('zone-selfie', 'file-selfie', 'preview-selfie', f => selfieFile = f);
+
+async function uploadToCloudinary(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (!data.secure_url) throw new Error('Error subiendo imagen');
+  return data.secure_url;
+}
+
+function showError(msg) {
+  const el = document.getElementById('run-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function showSuccess(msg) {
+  const el = document.getElementById('run-success');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+document.getElementById('runForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  document.getElementById('run-error').classList.remove('show');
+  document.getElementById('run-success').classList.remove('show');
+
+  if (!screenshotFile) return showError('Por favor sube el screenshot de tu app de running.');
+  if (!selfieFile) return showError('Por favor sube tu selfie post-run.');
+
+  const km = parseFloat(document.getElementById('run-km').value);
+  if (!km || km <= 0) return showError('Ingresa una distancia válida.');
+
+  const btn = document.getElementById('run-btn');
+  btn.innerHTML = '<span class="spinner"></span> Subiendo...';
+  btn.disabled = true;
+
+  try {
+    const [screenshotUrl, selfieUrl] = await Promise.all([
+      uploadToCloudinary(screenshotFile),
+      uploadToCloudinary(selfieFile)
+    ]);
+
+    const newTotal = (userData.totalKm || 0) + km;
+
+    await addDoc(collection(db, 'runs'), {
+      userId: currentUser.uid,
+      alias: userData.alias,
+      km,
+      totalKm: newTotal,
+      screenshotUrl,
+      selfieUrl,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+
+    await updateDoc(doc(db, 'users', currentUser.uid), {
+      totalKm: increment(km),
+      runsCount: increment(1)
+    });
+
+    userData.totalKm = newTotal;
+    userData.runsCount = (userData.runsCount || 0) + 1;
+
+    showSuccess(`✅ ¡Run de ${km} km enviado! Será validado pronto.`);
+    document.getElementById('runForm').reset();
+    document.getElementById('preview-screenshot').innerHTML = '';
+    document.getElementById('preview-selfie').innerHTML = '';
+    screenshotFile = null;
+    selfieFile = null;
+    renderProfile();
+    loadRuns();
+  } catch(err) {
+    showError('Error al subir el run. Intenta de nuevo.');
+    console.error(err);
+  } finally {
+    btn.innerHTML = 'Subir mi run';
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await signOut(auth);
+  window.location.href = 'index.html';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Únete al Reto · 10K Aniversario IMNUFIT</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">IMNU<span>FIT</span></a>
+  <div class="nav-links">
+    <a href="index.html">Inicio</a>
+    <a href="feed.html">Feed</a>
+  </div>
+</nav>
+
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:6rem 1.5rem 3rem;">
+  <div style="width:100%;max-width:420px;">
+
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="font-size:2.5rem;margin-bottom:0.75rem;">🔥</div>
+      <h1 style="font-size:1.8rem;font-weight:900;letter-spacing:-1px;margin-bottom:0.5rem;">Únete al reto</h1>
+      <p style="color:var(--text2);font-size:0.9rem;">10K Aniversario IMNUFIT · 15–19 Junio</p>
+    </div>
+
+    <!-- TABS -->
+    <div style="display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:1.5rem;">
+      <button class="tab-btn active" data-tab="signup" style="flex:1;padding:0.6rem;border-radius:7px;font-size:0.9rem;font-weight:600;background:var(--bg3);color:var(--text);border:none;cursor:pointer;transition:all 0.2s;">Registrarse</button>
+      <button class="tab-btn" data-tab="login" style="flex:1;padding:0.6rem;border-radius:7px;font-size:0.9rem;font-weight:600;background:transparent;color:var(--text2);border:none;cursor:pointer;transition:all 0.2s;">Iniciar sesión</button>
+    </div>
+
+    <div class="card" style="padding:1.75rem;">
+
+      <!-- SIGNUP -->
+      <div id="tab-signup">
+        <div class="alert alert-error" id="signup-error"></div>
+        <div class="alert alert-success" id="signup-success"></div>
+        <form id="signupForm">
+          <div class="form-group">
+            <label class="form-label">Tu nombre real</label>
+            <input class="form-input" type="text" id="su-name" placeholder="Ej: María López" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tu alias / nickname 🔥</label>
+            <input class="form-input" type="text" id="su-alias" placeholder='Ej: "La Imparable"' required>
+            <div class="form-hint">Este nombre aparecerá en el feed público</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" type="email" id="su-email" placeholder="tu@email.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <input class="form-input" type="password" id="su-password" placeholder="Mínimo 6 caracteres" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="signup-btn">
+            Crear cuenta y unirme al reto
+          </button>
+        </form>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="tab-login" style="display:none;">
+        <div class="alert alert-error" id="login-error"></div>
+        <form id="loginForm">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" type="email" id="li-email" placeholder="tu@email.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contraseña</label>
+            <input class="form-input" type="password" id="li-password" placeholder="Tu contraseña" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-btn">
+            Entrar al reto
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <p style="text-align:center;margin-top:1.25rem;font-size:0.8rem;color:var(--text3);">
+      Al registrarte aceptas participar en el reto 10K Aniversario IMNUFIT.<br>Los premios aplican según las reglas del reto.
+    </p>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from './js/firebase-config.js';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// Check if already logged in
+auth.onAuthStateChanged(user => {
+  if (user) window.location.href = 'dashboard.html';
+});
+
+// TABS
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.style.background = 'transparent';
+      b.style.color = 'var(--text2)';
+    });
+    btn.style.background = 'var(--bg3)';
+    btn.style.color = 'var(--text)';
+    const tab = btn.dataset.tab;
+    document.getElementById('tab-signup').style.display = tab === 'signup' ? 'block' : 'none';
+    document.getElementById('tab-login').style.display = tab === 'login' ? 'block' : 'none';
+  });
+});
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideError(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// SIGNUP
+document.getElementById('signupForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  hideError('signup-error');
+  const btn = document.getElementById('signup-btn');
+  const name = document.getElementById('su-name').value.trim();
+  const alias = document.getElementById('su-alias').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const password = document.getElementById('su-password').value;
+
+  if (alias.length < 2) return showError('signup-error', 'El alias debe tener al menos 2 caracteres.');
+
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      name, alias, email,
+      totalKm: 0,
+      runsCount: 0,
+      completed: false,
+      createdAt: serverTimestamp()
+    });
+    window.location.href = 'dashboard.html';
+  } catch(err) {
+    const msgs = {
+      'auth/email-already-in-use': 'Este email ya está registrado. Inicia sesión.',
+      'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
+      'auth/invalid-email': 'Email no válido.'
+    };
+    showError('signup-error', msgs[err.code] || 'Error al registrarse. Intenta de nuevo.');
+    btn.innerHTML = 'Crear cuenta y unirme al reto';
+    btn.disabled = false;
+  }
+});
+
+// LOGIN
+document.getElementById('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  hideError('login-error');
+  const btn = document.getElementById('login-btn');
+  const email = document.getElementById('li-email').value.trim();
+  const password = document.getElementById('li-password').value;
+
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    window.location.href = 'dashboard.html';
+  } catch(err) {
+    const msgs = {
+      'auth/user-not-found': 'No existe cuenta con ese email.',
+      'auth/wrong-password': 'Contraseña incorrecta.',
+      'auth/invalid-credential': 'Email o contraseña incorrectos.',
+      'auth/invalid-email': 'Email no válido.'
+    };
+    showError('login-error', msgs[err.code] || 'Error al iniciar sesión.');
+    btn.innerHTML = 'Entrar al reto';
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

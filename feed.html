@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feed · 10K Aniversario IMNUFIT</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">IMNU<span>FIT</span></a>
+  <div class="nav-links">
+    <a href="index.html">Inicio</a>
+    <a href="dashboard.html" id="navDash" style="display:none">Mi perfil</a>
+    <a href="register.html" id="navJoin" class="btn btn-primary" style="padding:0.5rem 1.1rem;font-size:0.85rem;">Únete</a>
+  </div>
+</nav>
+
+<div style="padding:6rem 2rem 4rem;max-width:760px;margin:0 auto;">
+
+  <div style="margin-bottom:2rem;">
+    <h1 style="font-size:2rem;font-weight:900;letter-spacing:-1px;margin-bottom:0.25rem;">En movimiento 🔥</h1>
+    <p style="color:var(--text2);font-size:0.9rem;">Todos los participantes del reto 10K Aniversario IMNUFIT</p>
+  </div>
+
+  <!-- GLOBAL STATS -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
+      <div style="font-size:1.75rem;font-weight:800;color:var(--accent)" id="sParticipants">—</div>
+      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Participantes</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
+      <div style="font-size:1.75rem;font-weight:800;color:var(--accent)" id="sTotalKm">—</div>
+      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">KM totales</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
+      <div style="font-size:1.75rem;font-weight:800;color:var(--green)" id="sCompleted">—</div>
+      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Completaron 10K</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0;">
+    <button class="ftab active" data-view="leaderboard" style="padding:0.6rem 1.25rem;background:none;border:none;font-size:0.9rem;font-weight:600;color:var(--text);border-bottom:2px solid var(--accent);margin-bottom:-1px;cursor:pointer;">Clasificación</button>
+    <button class="ftab" data-view="activity" style="padding:0.6rem 1.25rem;background:none;border:none;font-size:0.9rem;font-weight:600;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;">Actividad reciente</button>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="view-leaderboard">
+    <div id="leaderboardList" style="display:flex;flex-direction:column;gap:0.75rem;">
+      <div style="text-align:center;color:var(--text3);padding:3rem;font-size:0.9rem">Cargando clasificación...</div>
+    </div>
+  </div>
+
+  <!-- ACTIVITY -->
+  <div id="view-activity" style="display:none;">
+    <div class="feed" id="activityFeed">
+      <div style="text-align:center;color:var(--text3);padding:3rem;font-size:0.9rem">Cargando actividad...</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>10K Aniversario <strong>IMNUFIT</strong> · 15–19 Junio 2026</p>
+</footer>
+
+<script type="module">
+import { auth, db } from './js/firebase-config.js';
+import { collection, getDocs, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
+function getAvClass(uid) { return 'av-' + (uid.charCodeAt(0) % 5 + 1); }
+function getEmoji(uid) { return EMOJIS[uid.charCodeAt(0) % EMOJIS.length]; }
+function timeAgo(date) {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return 'ahora mismo';
+  if (diff < 3600) return `hace ${Math.floor(diff/60)} min`;
+  if (diff < 86400) return `hace ${Math.floor(diff/3600)}h`;
+  return `hace ${Math.floor(diff/86400)}d`;
+}
+
+// Auth nav
+auth.onAuthStateChanged(u => {
+  if (u) {
+    document.getElementById('navDash').style.display = 'inline';
+    document.getElementById('navJoin').style.display = 'none';
+  }
+});
+
+// TABS
+document.querySelectorAll('.ftab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ftab').forEach(b => {
+      b.style.color = 'var(--text2)';
+      b.style.borderBottomColor = 'transparent';
+    });
+    btn.style.color = 'var(--text)';
+    btn.style.borderBottomColor = 'var(--accent)';
+    document.getElementById('view-leaderboard').style.display = btn.dataset.view === 'leaderboard' ? 'block' : 'none';
+    document.getElementById('view-activity').style.display = btn.dataset.view === 'activity' ? 'block' : 'none';
+  });
+});
+
+function kmBarFeed(km) {
+  const pct = Math.min((km / 10) * 100, 100);
+  const done = km >= 10;
+  return `<div class="progress-bar" style="margin-top:0.4rem"><div class="progress-fill ${done ? 'complete' : ''}" style="width:${pct}%"></div></div>`;
+}
+
+// LEADERBOARD
+async function loadLeaderboard() {
+  const container = document.getElementById('leaderboardList');
+  try {
+    const q = query(collection(db, 'users'), orderBy('totalKm', 'desc'));
+    const snap = await getDocs(q);
+    let participants = 0, totalKm = 0, completed = 0;
+    if (snap.empty) {
+      container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:3rem">Sé el primero en unirte 🔥</div>';
+      return;
+    }
+    container.innerHTML = '';
+    let rank = 1;
+    snap.forEach(d => {
+      const u = d.data();
+      const uid = d.id;
+      const km = u.totalKm || 0;
+      const pct = Math.min((km / 10) * 100, 100);
+      const done = km >= 10;
+      participants++;
+      totalKm += km;
+      if (done) completed++;
+      const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+      container.innerHTML += `
+        <div class="feed-item" style="flex-direction:column;align-items:stretch;gap:0.75rem;">
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <div style="font-size:1.2rem;font-weight:800;min-width:36px;color:var(--text2)">${medal}</div>
+            <div class="feed-avatar ${getAvClass(uid)}">${getEmoji(uid)}</div>
+            <div style="flex:1;min-width:0;">
+              <div class="feed-name">${u.alias || 'Participante'}</div>
+              <div style="font-size:0.8rem;color:var(--text3)">${u.runsCount || 0} ${(u.runsCount||0)===1?'run':'runs'} registrados</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:1.2rem;font-weight:800;color:${done?'var(--green)':'var(--accent)'}">${km.toFixed(1)}<span style="font-size:0.8rem;font-weight:500;color:var(--text2)">km</span></div>
+              ${done ? '<div class="badge badge-green" style="margin-top:0.2rem">✅ Completado</div>' : ''}
+            </div>
+          </div>
+          <div>
+            ${kmBarFeed(km)}
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text3);margin-top:0.3rem">
+              <span>${km.toFixed(1)} km</span><span>10 km</span>
+            </div>
+          </div>
+        </div>`;
+      rank++;
+    });
+    document.getElementById('sParticipants').textContent = participants;
+    document.getElementById('sTotalKm').textContent = totalKm.toFixed(1);
+    document.getElementById('sCompleted').textContent = completed;
+  } catch(e) {
+    container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:3rem">Error cargando datos</div>';
+  }
+}
+
+// ACTIVITY FEED
+function loadActivity() {
+  const container = document.getElementById('activityFeed');
+  const q = query(collection(db, 'runs'), orderBy('createdAt', 'desc'), limit(30));
+  onSnapshot(q, snap => {
+    if (snap.empty) {
+      container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:3rem">Sin actividad aún. ¡Sé el primero!</div>';
+      return;
+    }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const r = d.data();
+      const date = r.createdAt?.toDate() || new Date();
+      const done = (r.totalKm || 0) >= 10;
+      container.innerHTML += `
+        <div class="feed-item">
+          <div class="feed-avatar ${getAvClass(r.userId||'x')}">${getEmoji(r.userId||'x')}</div>
+          <div class="feed-content">
+            <div class="feed-name">${r.alias || 'Participante'} ${done ? '<span class="badge badge-green" style="margin-left:0.3rem">✅</span>' : ''}</div>
+            <div class="feed-action">corrió <strong style="color:var(--accent)">${r.km} km</strong> · lleva ${(r.totalKm||0).toFixed(1)} km en total</div>
+          </div>
+          <div class="feed-meta">
+            <div class="feed-km">${r.km}K</div>
+            <div class="feed-time">${timeAgo(date)}</div>
+          </div>
+        </div>`;
+    });
+  });
+}
+
+loadLeaderboard();
+loadActivity();
+</script>
+</body>
+</html>

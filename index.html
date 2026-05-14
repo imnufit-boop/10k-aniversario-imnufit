@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>10K Aniversario IMNUFIT</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">IMNU<span>FIT</span></div>
+  <div class="nav-links">
+    <a href="#como">¿Cómo funciona?</a>
+    <a href="#premios">Premios</a>
+    <a href="feed.html">Feed</a>
+    <a href="register.html" class="btn btn-primary" style="padding:0.5rem 1.1rem;font-size:0.85rem;">Únete</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">🔥 15 – 19 Junio 2026</div>
+  <h1>10K<br><span class="highlight">Aniversario</span><br>IMNUFIT</h1>
+  <p>Corre, camina o trota 10 kilómetros en 5 días. Tú decides el ritmo. La comunidad te impulsa.</p>
+  <div class="hero-cta">
+    <a href="register.html" class="btn btn-primary btn-lg">Únete al reto</a>
+    <a href="feed.html" class="btn btn-outline btn-lg">Ver participantes</a>
+  </div>
+  <div class="stats-bar" id="heroStats">
+    <div class="stat">
+      <div class="stat-num" id="statParticipants">—</div>
+      <div class="stat-label">Participantes</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="statKm">—</div>
+      <div class="stat-label">KM acumulados</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="statCompleted">—</div>
+      <div class="stat-label">Retos completados</div>
+    </div>
+  </div>
+</section>
+
+<section class="countdown-section">
+  <h2>El reto comienza en</h2>
+  <div class="countdown">
+    <div class="countdown-item"><div class="countdown-num" id="cd-days">00</div><div class="countdown-label">Días</div></div>
+    <div class="countdown-item"><div class="countdown-num" id="cd-hours">00</div><div class="countdown-label">Horas</div></div>
+    <div class="countdown-item"><div class="countdown-num" id="cd-mins">00</div><div class="countdown-label">Minutos</div></div>
+    <div class="countdown-item"><div class="countdown-num" id="cd-secs">00</div><div class="countdown-label">Segundos</div></div>
+  </div>
+</section>
+
+<section class="prizes-section" id="premios">
+  <h2 class="section-title">Premios</h2>
+  <p class="section-sub">Con la Esp. Frendis Guevara</p>
+  <div class="prizes-grid">
+    <div class="prize-card featured">
+      <div class="prize-icon">🏆</div>
+      <div class="prize-amount">$50 OFF</div>
+      <div class="prize-label">Consulta Diagnóstico<br>Completas los 10K en 5 días</div>
+      <div class="prize-condition">Sube tu evidencia cada vez que corras. Al llegar a 10K se activa tu descuento.</div>
+    </div>
+    <div class="prize-card">
+      <div class="prize-icon">🎖️</div>
+      <div class="prize-amount">$20 OFF</div>
+      <div class="prize-label">Consulta Diagnóstico<br>Solo por participar y subir al menos 1 run</div>
+      <div class="prize-condition">Cualquier distancia cuenta. Lo que importa es que te muevas.</div>
+    </div>
+  </div>
+</section>
+
+<section class="feed-section" id="feed-preview">
+  <h2 class="section-title" style="margin-bottom:0.5rem">En movimiento</h2>
+  <p class="section-sub">La comunidad en tiempo real</p>
+  <div class="feed" id="feedPreview">
+    <div style="text-align:center;color:var(--text3);padding:2rem">Cargando actividad...</div>
+  </div>
+  <div style="text-align:center;margin-top:1.5rem">
+    <a href="feed.html" class="btn btn-outline">Ver todos los participantes →</a>
+  </div>
+</section>
+
+<section class="how-section" id="como">
+  <h2 class="section-title">¿Cómo funciona?</h2>
+  <p class="section-sub">Simple. Sin excusas.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Regístrate</h3>
+      <p>Crea tu perfil con un alias épico. "El Imparable", "La Bestia", lo que seas.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Corre</h3>
+      <p>Usa Nike Run, Apple Watch, Strava o cualquier app. Tú eliges cómo y cuándo.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Sube tu evidencia</h3>
+      <p>Foto del resultado en tu app + selfie. Se valida y apareces en el feed.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h3>Gana tu descuento</h3>
+      <p>Al completar 10K recibes $50 OFF. Solo por participar, $20 OFF.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>10K Aniversario <strong>IMNUFIT</strong> · 15–19 Junio 2026 · Con la Esp. Frendis Guevara</p>
+</footer>
+
+<script type="module">
+import { db } from './js/firebase-config.js';
+import { collection, getDocs, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
+
+function getAvClass(uid) {
+  const n = uid.charCodeAt(0) % 5 + 1;
+  return 'av-' + n;
+}
+
+function getEmoji(uid) {
+  return EMOJIS[uid.charCodeAt(0) % EMOJIS.length];
+}
+
+function timeAgo(date) {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return 'ahora mismo';
+  if (diff < 3600) return `hace ${Math.floor(diff/60)} min`;
+  if (diff < 86400) return `hace ${Math.floor(diff/3600)}h`;
+  return `hace ${Math.floor(diff/86400)}d`;
+}
+
+function kmBar(km) {
+  const pct = Math.min((km/10)*100, 100);
+  const done = km >= 10;
+  return `<div class="progress-bar"><div class="progress-fill ${done?'complete':''}" style="width:${pct}%"></div></div>`;
+}
+
+async function loadStats() {
+  try {
+    const snap = await getDocs(collection(db, 'users'));
+    let participants = 0, totalKm = 0, completed = 0;
+    snap.forEach(d => {
+      const u = d.data();
+      participants++;
+      totalKm += (u.totalKm || 0);
+      if ((u.totalKm || 0) >= 10) completed++;
+    });
+    document.getElementById('statParticipants').textContent = participants || '0';
+    document.getElementById('statKm').textContent = totalKm.toFixed(1);
+    document.getElementById('statCompleted').textContent = completed;
+  } catch(e) {}
+}
+
+async function loadFeedPreview() {
+  const container = document.getElementById('feedPreview');
+  try {
+    const q = query(collection(db, 'runs'), orderBy('createdAt','desc'), limit(5));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:2rem;font-size:0.9rem">Sé el primero en aparecer aquí 🔥</div>';
+      return;
+    }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const r = d.data();
+      const date = r.createdAt?.toDate() || new Date();
+      container.innerHTML += `
+        <div class="feed-item">
+          <div class="feed-avatar ${getAvClass(r.userId||'x')}">${getEmoji(r.userId||'x')}</div>
+          <div class="feed-content">
+            <div class="feed-name">${r.alias || 'Anónimo'}</div>
+            <div class="feed-action">agregó ${r.km} km · ${kmBar(r.totalKm || 0)}</div>
+          </div>
+          <div class="feed-meta">
+            <div class="feed-km">${r.km}K</div>
+            <div class="feed-time">${timeAgo(date)}</div>
+          </div>
+        </div>`;
+    });
+  } catch(e) {
+    container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:2rem">Error cargando feed</div>';
+  }
+}
+
+function countdown() {
+  const target = new Date('2026-06-15T00:00:00');
+  function tick() {
+    const diff = target - Date.now();
+    if (diff <= 0) {
+      document.querySelector('.countdown-section h2').textContent = '¡El reto está activo!';
+      return;
+    }
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor((diff%86400000)/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    document.getElementById('cd-days').textContent = String(d).padStart(2,'0');
+    document.getElementById('cd-hours').textContent = String(h).padStart(2,'0');
+    document.getElementById('cd-mins').textContent = String(m).padStart(2,'0');
+    document.getElementById('cd-secs').textContent = String(s).padStart(2,'0');
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+loadStats();
+loadFeedPreview();
+countdown();
+</script>
+</body>
+</html>
