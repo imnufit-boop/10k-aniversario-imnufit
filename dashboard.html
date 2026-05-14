@@ -99,7 +99,7 @@
 <script type="module">
 import { auth, db, CLOUDINARY_CLOUD, CLOUDINARY_PRESET } from './js/firebase-config.js';
 import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, getDoc, collection, addDoc, query, where, orderBy, getDocs, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection, addDoc, query, where, orderBy, getDocs, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
 function getEmoji(uid) { return EMOJIS[uid.charCodeAt(0) % EMOJIS.length]; }
@@ -113,8 +113,23 @@ let selfieFile = null;
 auth.onAuthStateChanged(async user => {
   if (!user) { window.location.href = 'register.html'; return; }
   currentUser = user;
-  const snap = await getDoc(doc(db, 'users', user.uid));
-  if (!snap.exists()) { window.location.href = 'register.html'; return; }
+  let snap = await getDoc(doc(db, 'users', user.uid));
+  if (!snap.exists()) {
+    // Recovery: doc was never created (e.g. setDoc failed during signup).
+    // Ask user for an alias inline and create the doc now.
+    const alias = prompt('Bienvenido de vuelta! Para completar tu registro, ingresa tu alias:');
+    if (!alias || alias.trim().length < 2) { window.location.href = 'register.html'; return; }
+    await setDoc(doc(db, 'users', user.uid), {
+      name: user.displayName || alias.trim(),
+      alias: alias.trim(),
+      email: user.email,
+      totalKm: 0,
+      runsCount: 0,
+      completed: false,
+      createdAt: serverTimestamp()
+    });
+    snap = await getDoc(doc(db, 'users', user.uid));
+  }
   userData = snap.data();
   renderProfile();
   loadRuns();

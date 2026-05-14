@@ -138,6 +138,8 @@ document.getElementById('signupForm').addEventListener('submit', async e => {
 
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
+    // Wait for auth token to propagate to Firestore before writing
+    await cred.user.getIdToken(true);
     await setDoc(doc(db, 'users', cred.user.uid), {
       name, alias, email,
       totalKm: 0,
