@@ -67,7 +67,6 @@
     </div>
 
     <div class="alert alert-error" id="run-error"></div>
-    <div class="alert alert-success" id="run-success"></div>
 
     <form id="runForm">
       <div class="form-group">
@@ -309,16 +308,10 @@ function showError(msg) {
   el.textContent = msg;
   el.classList.add('show');
 }
-function showSuccess(msg) {
-  const el = document.getElementById('run-success');
-  el.textContent = msg;
-  el.classList.add('show');
-}
 
 document.getElementById('runForm').addEventListener('submit', async e => {
   e.preventDefault();
   document.getElementById('run-error').classList.remove('show');
-  document.getElementById('run-success').classList.remove('show');
 
   if (!screenshotFile) return showError('Por favor sube el screenshot de tu app de running.');
   if (!selfieFile) return showError('Por favor sube tu selfie post-run.');
@@ -357,7 +350,6 @@ document.getElementById('runForm').addEventListener('submit', async e => {
     userData.totalKm = newTotal;
     userData.runsCount = (userData.runsCount || 0) + 1;
 
-    showSuccess(`✅ ¡Run de ${km} km enviado! Será validado pronto.`);
     document.getElementById('runForm').reset();
     document.getElementById('preview-screenshot').innerHTML = '';
     document.getElementById('preview-selfie').innerHTML = '';
@@ -367,10 +359,17 @@ document.getElementById('runForm').addEventListener('submit', async e => {
     renderKm();
     renderProfile();
     loadRuns();
+
+    btn.classList.add('btn-success');
+    btn.innerHTML = '<span class="check-mark"></span> ¡Run registrado!';
+    setTimeout(() => {
+      btn.classList.remove('btn-success');
+      btn.innerHTML = 'Subir mi run';
+      btn.disabled = false;
+    }, 2000);
   } catch(err) {
     showError('Error al subir el run. Intenta de nuevo.');
     console.error(err);
-  } finally {
     btn.innerHTML = 'Subir mi run';
     btn.disabled = false;
   }
