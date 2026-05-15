@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Feed · 10K Aniversario IMNUFIT</title>
+  <title>Posiciones · 10K Aniversario IMNUFIT</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,9 +11,8 @@
 <nav>
   <a class="nav-logo" href="index.html">IMNU<span>FIT</span></a>
   <div class="nav-links">
-    <a href="index.html">Inicio</a>
-    <a href="dashboard.html" id="navDash" style="display:none">Mi perfil</a>
-    <a href="register.html" id="navJoin" class="btn btn-primary" style="padding:0.5rem 1.1rem;font-size:0.85rem;">Únete</a>
+    <a href="dashboard.html">Mi perfil</a>
+    <button id="logoutBtn" class="btn-ghost btn" style="font-size:0.85rem;">Salir</button>
   </div>
 </nav>
 
@@ -68,6 +67,7 @@
 
 <script type="module">
 import { auth, db } from './js/firebase-config.js';
+import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { collection, getDocs, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
@@ -81,12 +81,14 @@ function timeAgo(date) {
   return `hace ${Math.floor(diff/86400)}d`;
 }
 
-// Auth nav
+// Requiere sesión iniciada
 auth.onAuthStateChanged(u => {
-  if (u) {
-    document.getElementById('navDash').style.display = 'inline';
-    document.getElementById('navJoin').style.display = 'none';
-  }
+  if (!u) { window.location.href = 'register.html'; return; }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await signOut(auth);
+  window.location.href = 'index.html';
 });
 
 // TABS

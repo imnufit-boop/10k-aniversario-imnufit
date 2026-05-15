@@ -111,6 +111,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
+// Abrir pestaña de login si se llega con #login
+if (location.hash === '#login') {
+  document.querySelector('.tab-btn[data-tab="login"]').click();
+}
+
 function showError(id, msg) {
   const el = document.getElementById(id);
   el.textContent = msg;
