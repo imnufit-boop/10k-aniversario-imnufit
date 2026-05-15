@@ -99,7 +99,7 @@
 <script type="module">
 import { auth, db, CLOUDINARY_CLOUD, CLOUDINARY_PRESET } from './js/firebase-config.js';
 import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, getDoc, setDoc, collection, addDoc, query, where, orderBy, getDocs, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
 function getEmoji(uid) { return EMOJIS[uid.charCodeAt(0) % EMOJIS.length]; }
@@ -162,25 +162,31 @@ function renderProfile() {
 
 async function loadRuns() {
   const list = document.getElementById('runsList');
-  const q = query(collection(db, 'runs'), where('userId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
-  const snap = await getDocs(q);
-  if (snap.empty) return;
-  list.innerHTML = '';
-  snap.forEach(d => {
-    const r = d.data();
-    const date = r.createdAt?.toDate();
-    const dateStr = date ? date.toLocaleDateString('es', { day:'numeric', month:'short' }) : '';
-    const statusMap = { pending: '⏳ Pendiente', approved: '✅ Aprobado', rejected: '❌ Rechazado' };
-    list.innerHTML += `
-      <div class="run-item">
-        <div class="run-icon">🏃</div>
-        <div class="run-info">
-          <div class="run-km">${r.km} km</div>
-          <div class="run-date">${dateStr}</div>
-        </div>
-        <div class="run-status">${statusMap[r.status] || '⏳'}</div>
-      </div>`;
-  });
+  try {
+    const q = query(collection(db, 'runs'), where('userId', '==', currentUser.uid));
+    const snap = await getDocs(q);
+    if (snap.empty) return;
+    const runs = snap.docs
+      .map(d => d.data())
+      .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    list.innerHTML = '';
+    runs.forEach(r => {
+      const date = r.createdAt?.toDate();
+      const dateStr = date ? date.toLocaleDateString('es', { day:'numeric', month:'short' }) : '';
+      list.innerHTML += `
+        <div class="run-item">
+          <div class="run-icon">🏃</div>
+          <div class="run-info">
+            <div class="run-km">${r.km} km</div>
+            <div class="run-date">${dateStr}</div>
+          </div>
+          <div class="run-status">✅ Registrado</div>
+        </div>`;
+    });
+  } catch(e) {
+    console.error('Error cargando runs:', e);
+    list.innerHTML = '<div style="color:var(--text3);font-size:0.9rem;text-align:center;padding:1.5rem">No se pudieron cargar tus runs</div>';
+  }
 }
 
 // Upload zones
