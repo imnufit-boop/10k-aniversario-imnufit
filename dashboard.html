@@ -47,6 +47,11 @@
     <div class="card-title">Registrar un run 🏃</div>
     <div class="card-sub">Sube tu evidencia para sumar kilómetros al reto</div>
 
+    <div class="day-strip">
+      <div class="day-dots" id="dayDots"></div>
+      <div class="day-label" id="dayLabel">—</div>
+    </div>
+
     <div class="alert alert-error" id="run-error"></div>
     <div class="alert alert-success" id="run-success"></div>
 
@@ -104,6 +109,31 @@ import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, updateD
 const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
 function getEmoji(uid) { return EMOJIS[uid.charCodeAt(0) % EMOJIS.length]; }
 function getAvClass(uid) { return 'av-' + (uid.charCodeAt(0) % 5 + 1); }
+
+// Challenge day: 15-19 June 2026 (5 days)
+const CHALLENGE_START = new Date('2026-06-15T00:00:00');
+function getChallengeDay() {
+  const diff = Math.floor((Date.now() - CHALLENGE_START.getTime()) / 86400000);
+  if (diff < 0) return 0;   // antes del reto
+  if (diff > 4) return 6;   // reto finalizado
+  return diff + 1;          // 1..5
+}
+function renderDayStrip() {
+  const day = getChallengeDay();
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    let cls = 'day-dot';
+    if (day === 6 || i < day) cls = 'day-dot done';
+    if (i === day) cls = 'day-dot active';
+    html += `<span class="${cls}"></span>`;
+  }
+  document.getElementById('dayDots').innerHTML = html;
+  const label = document.getElementById('dayLabel');
+  if (day === 0) label.textContent = 'El reto inicia el 15 jun';
+  else if (day === 6) label.textContent = 'Reto finalizado';
+  else label.textContent = `Día ${day} de 5`;
+}
+renderDayStrip();
 
 let currentUser = null;
 let userData = null;
@@ -173,12 +203,13 @@ async function loadRuns() {
     runs.forEach(r => {
       const date = r.createdAt?.toDate();
       const dateStr = date ? date.toLocaleDateString('es', { day:'numeric', month:'short' }) : '';
+      const dayStr = (r.day >= 1 && r.day <= 5) ? `Día ${r.day} · ` : '';
       list.innerHTML += `
         <div class="run-item">
           <div class="run-icon">🏃</div>
           <div class="run-info">
             <div class="run-km">${r.km} km</div>
-            <div class="run-date">${dateStr}</div>
+            <div class="run-date">${dayStr}${dateStr}</div>
           </div>
           <div class="run-status">✅ Registrado</div>
         </div>`;
@@ -260,6 +291,7 @@ document.getElementById('runForm').addEventListener('submit', async e => {
       alias: userData.alias,
       km,
       totalKm: newTotal,
+      day: getChallengeDay(),
       screenshotUrl,
       selfieUrl,
       status: 'pending',
