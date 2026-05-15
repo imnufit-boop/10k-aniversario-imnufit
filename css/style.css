@@ -209,26 +209,33 @@ nav {
 
 /* KM STEPPER */
 .km-stepper {
-  display: flex; align-items: center; justify-content: center; gap: 1.25rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
   background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 14px; padding: 1.25rem 1rem;
+  border-radius: 14px; padding: 1.25rem 1.75rem;
 }
 .km-btn {
-  width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0;
+  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
   background: var(--accent); color: #fff;
-  font-size: 2rem; font-weight: 700; line-height: 1;
+  font-size: 1.9rem; font-weight: 700; line-height: 1;
   display: flex; align-items: center; justify-content: center;
   transition: transform 0.12s, background 0.15s;
 }
 .km-btn:hover:not(:disabled) { background: var(--accent2); transform: scale(1.08); }
 .km-btn:active:not(:disabled) { transform: scale(0.95); }
 .km-btn:disabled { background: var(--bg2); color: var(--text3); cursor: not-allowed; }
-.km-value {
-  font-size: 3.25rem; font-weight: 900; color: var(--accent);
-  letter-spacing: -2px; line-height: 1;
-  min-width: 150px; text-align: center;
+.km-value-wrap {
+  flex: 1; min-width: 0;
+  display: flex; align-items: baseline; justify-content: center; gap: 0.3rem;
 }
-.km-unit { font-size: 1rem; font-weight: 600; color: var(--text2); letter-spacing: 0; margin-left: 0.35rem; }
+.km-value {
+  width: 4ch; text-align: center;
+  font-size: 3rem; font-weight: 900; color: var(--accent);
+  letter-spacing: -1px; line-height: 1;
+  background: transparent; border: none; padding: 0;
+  font-family: inherit;
+}
+.km-value:focus { outline: none; }
+.km-unit { font-size: 1rem; font-weight: 600; color: var(--text2); flex-shrink: 0; }
 
 /* CARD */
 .card {
@@ -389,6 +396,9 @@ footer strong { color: var(--accent); }
   .stats-bar { gap: 1.5rem; }
   .profile-header { flex-direction: column; text-align: center; }
   .running-photo img { height: 220px; }
+  .km-stepper { padding: 1rem 1.25rem; }
+  .km-btn { width: 46px; height: 46px; font-size: 1.6rem; }
+  .km-value { font-size: 2.25rem; }
 }
 
 /* SPINNER */
