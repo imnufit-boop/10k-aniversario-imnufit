@@ -228,7 +228,7 @@ nav {
   display: flex; align-items: baseline; justify-content: center; gap: 0.3rem;
 }
 .km-value {
-  width: 4ch; text-align: right;
+  text-align: center;
   font-size: 3rem; font-weight: 900; color: var(--accent);
   letter-spacing: -1px; line-height: 1;
   background: transparent; border: none; padding: 0;

@@ -61,7 +61,7 @@
         <div class="km-stepper">
           <button type="button" class="km-btn" id="km-minus" aria-label="Restar">−</button>
           <div class="km-value-wrap">
-            <input type="text" inputmode="decimal" class="km-value" id="km-display" value="1.0" aria-label="Kilómetros">
+            <input type="text" inputmode="decimal" class="km-value" id="km-display" value="1.0" size="3" aria-label="Kilómetros">
             <span class="km-unit">km</span>
           </div>
           <button type="button" class="km-btn" id="km-plus" aria-label="Sumar">+</button>
@@ -256,6 +256,7 @@ const KM_MIN = 0.0, KM_MAX = 20.0, KM_STEP = 0.1;
 const kmInput = document.getElementById('km-display');
 function renderKm() {
   kmInput.value = kmValue.toFixed(1);
+  kmInput.size = Math.max(2, kmInput.value.length);
   document.getElementById('km-minus').disabled = kmValue <= KM_MIN;
   document.getElementById('km-plus').disabled = kmValue >= KM_MAX;
 }
@@ -274,6 +275,7 @@ document.getElementById('km-plus').addEventListener('click', () => {
   renderKm();
 });
 kmInput.addEventListener('focus', () => kmInput.select());
+kmInput.addEventListener('input', () => { kmInput.size = Math.max(2, kmInput.value.length || 2); });
 kmInput.addEventListener('change', commitKmInput);
 kmInput.addEventListener('blur', commitKmInput);
 renderKm();
