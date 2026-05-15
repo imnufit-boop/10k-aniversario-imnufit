@@ -207,6 +207,29 @@ nav {
 .form-input::placeholder { color: var(--text3); }
 .form-hint { font-size: 0.78rem; color: var(--text3); margin-top: 0.35rem; }
 
+/* KM STEPPER */
+.km-stepper {
+  display: flex; align-items: center; justify-content: center; gap: 1.25rem;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 14px; padding: 1.25rem 1rem;
+}
+.km-btn {
+  width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0;
+  background: var(--accent); color: #fff;
+  font-size: 2rem; font-weight: 700; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.12s, background 0.15s;
+}
+.km-btn:hover:not(:disabled) { background: var(--accent2); transform: scale(1.08); }
+.km-btn:active:not(:disabled) { transform: scale(0.95); }
+.km-btn:disabled { background: var(--bg2); color: var(--text3); cursor: not-allowed; }
+.km-value {
+  font-size: 3.25rem; font-weight: 900; color: var(--accent);
+  letter-spacing: -2px; line-height: 1;
+  min-width: 150px; text-align: center;
+}
+.km-unit { font-size: 1rem; font-weight: 600; color: var(--text2); letter-spacing: 0; margin-left: 0.35rem; }
+
 /* CARD */
 .card {
   background: var(--bg2); border: 1px solid var(--border);

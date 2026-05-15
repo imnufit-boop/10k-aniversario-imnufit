@@ -58,7 +58,12 @@
     <form id="runForm">
       <div class="form-group">
         <label class="form-label">¿Cuántos km corriste?</label>
-        <input class="form-input" type="number" id="run-km" step="0.1" min="0.1" max="42" placeholder="Ej: 3.5" required>
+        <div class="km-stepper">
+          <button type="button" class="km-btn" id="km-minus" aria-label="Restar">−</button>
+          <div class="km-value"><span id="km-display">1.0</span><span class="km-unit">km</span></div>
+          <button type="button" class="km-btn" id="km-plus" aria-label="Sumar">+</button>
+        </div>
+        <div class="form-hint">Mínimo 1.0 km · Máximo 20.0 km por registro</div>
       </div>
 
       <div class="form-group">
@@ -242,6 +247,24 @@ function setupZone(zoneId, fileInputId, previewId, onFile) {
 setupZone('zone-screenshot', 'file-screenshot', 'preview-screenshot', f => screenshotFile = f);
 setupZone('zone-selfie', 'file-selfie', 'preview-selfie', f => selfieFile = f);
 
+// KM stepper: empieza en 1.0, pasos de 0.1, rango 1.0–20.0
+let kmValue = 1.0;
+const KM_MIN = 1.0, KM_MAX = 20.0, KM_STEP = 0.1;
+function renderKm() {
+  document.getElementById('km-display').textContent = kmValue.toFixed(1);
+  document.getElementById('km-minus').disabled = kmValue <= KM_MIN;
+  document.getElementById('km-plus').disabled = kmValue >= KM_MAX;
+}
+document.getElementById('km-minus').addEventListener('click', () => {
+  kmValue = Math.max(KM_MIN, Math.round((kmValue - KM_STEP) * 10) / 10);
+  renderKm();
+});
+document.getElementById('km-plus').addEventListener('click', () => {
+  kmValue = Math.min(KM_MAX, Math.round((kmValue + KM_STEP) * 10) / 10);
+  renderKm();
+});
+renderKm();
+
 async function uploadToCloudinary(file) {
   const fd = new FormData();
   fd.append('file', file);
@@ -271,8 +294,7 @@ document.getElementById('runForm').addEventListener('submit', async e => {
   if (!screenshotFile) return showError('Por favor sube el screenshot de tu app de running.');
   if (!selfieFile) return showError('Por favor sube tu selfie post-run.');
 
-  const km = parseFloat(document.getElementById('run-km').value);
-  if (!km || km <= 0) return showError('Ingresa una distancia válida.');
+  const km = kmValue;
 
   const btn = document.getElementById('run-btn');
   btn.innerHTML = '<span class="spinner"></span> Subiendo...';
@@ -312,6 +334,8 @@ document.getElementById('runForm').addEventListener('submit', async e => {
     document.getElementById('preview-selfie').innerHTML = '';
     screenshotFile = null;
     selfieFile = null;
+    kmValue = 1.0;
+    renderKm();
     renderProfile();
     loadRuns();
   } catch(err) {
