@@ -228,6 +228,20 @@ nav {
 .form-input::placeholder { color: var(--text3); }
 .form-hint { font-size: 0.78rem; color: var(--text3); margin-top: 0.35rem; }
 
+/* PASSWORD CON OJO */
+.password-wrap { position: relative; }
+.password-wrap .form-input { padding-right: 3rem; }
+.password-toggle {
+  position: absolute; right: 0.35rem; top: 50%;
+  transform: translateY(-50%);
+  background: transparent; border: none; cursor: pointer;
+  color: var(--text3);
+  width: 2.4rem; height: 2.4rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.password-toggle:hover { color: var(--text2); }
+.password-toggle svg { display: block; }
+
 /* KM STEPPER */
 .km-stepper {
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
