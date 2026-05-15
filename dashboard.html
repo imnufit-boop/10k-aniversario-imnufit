@@ -63,7 +63,7 @@
           <div class="km-value"><span id="km-display">1.0</span><span class="km-unit">km</span></div>
           <button type="button" class="km-btn" id="km-plus" aria-label="Sumar">+</button>
         </div>
-        <div class="form-hint">Mínimo 1.0 km · Máximo 20.0 km por registro</div>
+        <div class="form-hint">De 0.0 a 20.0 km por registro</div>
       </div>
 
       <div class="form-group">
@@ -249,7 +249,7 @@ setupZone('zone-selfie', 'file-selfie', 'preview-selfie', f => selfieFile = f);
 
 // KM stepper: empieza en 1.0, pasos de 0.1, rango 1.0–20.0
 let kmValue = 1.0;
-const KM_MIN = 1.0, KM_MAX = 20.0, KM_STEP = 0.1;
+const KM_MIN = 0.0, KM_MAX = 20.0, KM_STEP = 0.1;
 function renderKm() {
   document.getElementById('km-display').textContent = kmValue.toFixed(1);
   document.getElementById('km-minus').disabled = kmValue <= KM_MIN;
