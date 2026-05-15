@@ -102,9 +102,10 @@
         <input type="file" id="file-selfie" accept="image/*" style="display:none">
       </div>
 
-      <button type="submit" class="btn btn-primary btn-block btn-lg" id="run-btn">
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="run-btn" style="display:none">
         Subir mi run
       </button>
+      <div id="run-hint" class="form-hint" style="text-align:center;margin-top:0.75rem;">📸 Sube el screenshot y la selfie para activar el botón</div>
     </form>
   </div>
 
@@ -260,8 +261,15 @@ function setupZone(zoneId, fileInputId, previewId, onFile) {
   }
 }
 
-setupZone('zone-screenshot', 'file-screenshot', 'preview-screenshot', f => screenshotFile = f);
-setupZone('zone-selfie', 'file-selfie', 'preview-selfie', f => selfieFile = f);
+setupZone('zone-screenshot', 'file-screenshot', 'preview-screenshot', f => { screenshotFile = f; updateSubmitVisibility(); });
+setupZone('zone-selfie', 'file-selfie', 'preview-selfie', f => { selfieFile = f; updateSubmitVisibility(); });
+
+function updateSubmitVisibility() {
+  const ready = !!(screenshotFile && selfieFile);
+  document.getElementById('run-btn').style.display = ready ? '' : 'none';
+  document.getElementById('run-hint').style.display = ready ? 'none' : 'block';
+}
+updateSubmitVisibility();
 
 // KM stepper: empieza en 1.0, pasos de 0.1, rango 1.0–20.0
 let kmValue = 1.0;
@@ -366,6 +374,7 @@ document.getElementById('runForm').addEventListener('submit', async e => {
       btn.classList.remove('btn-success');
       btn.innerHTML = 'Subir mi run';
       btn.disabled = false;
+      updateSubmitVisibility();
     }, 2000);
   } catch(err) {
     showError('Error al subir el run. Intenta de nuevo.');
