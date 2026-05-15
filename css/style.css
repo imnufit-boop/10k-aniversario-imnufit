@@ -20,7 +20,7 @@ html { font-size: 16px; scroll-behavior: smooth; }
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
 a { color: inherit; text-decoration: none; }
-button { cursor: pointer; font-family: inherit; border: none; outline: none; }
+button { cursor: pointer; font-family: inherit; border: none; outline: none; touch-action: manipulation; }
 input, textarea, select { font-family: inherit; outline: none; }
 
 /* NAV */
