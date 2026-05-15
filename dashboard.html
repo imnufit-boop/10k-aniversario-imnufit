@@ -32,13 +32,27 @@
   <div class="big-progress">
     <div class="big-km"><span id="bigKm">0.0</span><span> / 10 km</span></div>
     <div class="big-label" style="margin-top:0.5rem">progreso del reto</div>
-    <div class="big-bar"><div class="big-fill" id="bigFill" style="width:0%"></div></div>
-    <div class="big-pct" id="bigPct">0% completado</div>
-    <div id="completedMsg" style="display:none;margin-top:1rem;padding:0.85rem;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;color:var(--green);font-weight:600;font-size:0.9rem;text-align:center;">
-      🎉 ¡Completaste el reto! Tu descuento de <strong>$50 OFF</strong> está siendo procesado.
+    <div class="big-bar">
+      <div class="big-fill" id="bigFill" style="width:0%"></div>
+      <div class="bar-tick" style="left:50%"></div>
     </div>
-    <div id="participantMsg" style="display:none;margin-top:1rem;padding:0.85rem;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:8px;color:var(--accent);font-size:0.85rem;text-align:center;">
-      🎖️ Ya ganaste <strong>$20 OFF</strong> por participar. ¡Sigue sumando km para el $50 OFF!
+    <div class="milestones">
+      <div class="milestone" id="ms-5" style="left:50%">
+        <span class="milestone-amt">$25 OFF</span>
+        <span class="milestone-km">5 km</span>
+      </div>
+      <div class="milestone milestone-end" id="ms-10">
+        <span class="milestone-amt">$50 OFF</span>
+        <span class="milestone-km">10 km</span>
+      </div>
+    </div>
+    <div class="big-pct" id="bigPct">0% completado</div>
+    <div id="completedMsg" style="display:none;margin-top:1rem;padding:0.85rem 1rem;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;color:var(--green);font-weight:600;font-size:0.88rem;text-align:center;line-height:1.5;">
+      🎉 ¡Completaste los 10K! Ganaste <strong>$50 OFF</strong> en tu Consulta Diagnóstico con la Esp. Frendis Guevara. Canjéalo antes de que termine junio 2026.
+    </div>
+    <div id="participantMsg" style="display:none;margin-top:1rem;padding:0.85rem 1rem;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:8px;color:var(--accent);font-size:0.85rem;text-align:center;line-height:1.5;">
+      🎖️ ¡Llegaste a 5K! Ganaste <strong>$25 OFF</strong>. Sigue sumando km para el <strong>$50 OFF</strong>.<br>
+      Los descuentos se canjean en una <strong>Consulta Diagnóstico</strong> con la Esp. Frendis Guevara, antes de que culmine junio 2026.
     </div>
   </div>
 
@@ -177,8 +191,8 @@ function renderProfile() {
   const uid = currentUser.uid;
   const km = userData.totalKm || 0;
   const pct = Math.min((km / 10) * 100, 100);
-  const done = km >= 10;
-  const hasRuns = (userData.runsCount || 0) > 0;
+  const done10 = km >= 10;
+  const done5 = km >= 5;
 
   document.getElementById('profileAvatar').textContent = getEmoji(uid);
   document.getElementById('profileAvatar').className = `profile-avatar ${getAvClass(uid)}`;
@@ -188,14 +202,14 @@ function renderProfile() {
 
   document.getElementById('bigKm').textContent = km.toFixed(1);
   document.getElementById('bigFill').style.width = pct + '%';
-  document.getElementById('bigFill').className = 'big-fill' + (done ? ' complete' : '');
+  document.getElementById('bigFill').className = 'big-fill' + (done10 ? ' complete' : '');
   document.getElementById('bigPct').textContent = pct.toFixed(0) + '% completado';
 
-  if (done) {
-    document.getElementById('completedMsg').style.display = 'block';
-  } else if (hasRuns) {
-    document.getElementById('participantMsg').style.display = 'block';
-  }
+  document.getElementById('ms-5').classList.toggle('reached', done5);
+  document.getElementById('ms-10').classList.toggle('reached', done10);
+
+  document.getElementById('completedMsg').style.display = done10 ? 'block' : 'none';
+  document.getElementById('participantMsg').style.display = (!done10 && done5) ? 'block' : 'none';
 }
 
 async function loadRuns() {
