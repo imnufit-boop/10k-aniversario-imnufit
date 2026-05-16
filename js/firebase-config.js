@@ -18,6 +18,9 @@ export const db = getFirestore(app);
 export const CLOUDINARY_CLOUD = "dikoufbd8";
 export const CLOUDINARY_PRESET = "imnufit_10k";
 
+// Email con acceso al panel de administración
+export const ADMIN_EMAIL = "imnufit@gmail.com";
+
 // Clave normalizada del alias para comparar unicidad:
 // minúsculas, sin tildes/acentos y sin espacios duplicados.
 // Así "El Campeón", "el campeon" y "El  Campeon" cuentan como el mismo alias.

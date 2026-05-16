@@ -128,7 +128,7 @@
 </footer>
 
 <script type="module">
-import { auth, db, CLOUDINARY_CLOUD, CLOUDINARY_PRESET, normalizeAlias } from './js/firebase-config.js';
+import { auth, db, CLOUDINARY_CLOUD, CLOUDINARY_PRESET, normalizeAlias, ADMIN_EMAIL } from './js/firebase-config.js';
 import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -168,6 +168,7 @@ let selfieFile = null;
 
 auth.onAuthStateChanged(async user => {
   if (!user) { window.location.href = 'register.html'; return; }
+  if (user.email === ADMIN_EMAIL) { window.location.href = 'admin.html'; return; }
   currentUser = user;
   let snap = await getDoc(doc(db, 'users', user.uid));
   if (!snap.exists()) {
