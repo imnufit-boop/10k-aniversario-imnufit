@@ -90,7 +90,7 @@
 </div>
 
 <script type="module">
-import { auth, db } from './js/firebase-config.js';
+import { auth, db, normalizeAlias } from './js/firebase-config.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, setDoc, getDoc, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -162,8 +162,9 @@ document.getElementById('signupForm').addEventListener('submit', async e => {
 
   try {
     // El alias debe ser único entre los participantes
-    const aliasLower = alias.toLowerCase();
-    const dup = await getDocs(query(collection(db, 'users'), where('aliasLower', '==', aliasLower)));
+    // (sin distinguir mayúsculas ni tildes: "El Campeón" == "el campeon")
+    const aliasKey = normalizeAlias(alias);
+    const dup = await getDocs(query(collection(db, 'users'), where('aliasKey', '==', aliasKey)));
     if (!dup.empty) {
       showError('signup-error', 'Ese alias ya está en uso. Elige otro.');
       btn.innerHTML = 'Crear cuenta y unirme al reto';
@@ -175,7 +176,7 @@ document.getElementById('signupForm').addEventListener('submit', async e => {
     // Wait for auth token to propagate to Firestore before writing
     await cred.user.getIdToken(true);
     await setDoc(doc(db, 'users', cred.user.uid), {
-      name, alias, aliasLower, email,
+      name, alias, aliasKey, email,
       totalKm: 0,
       runsCount: 0,
       completed: false,

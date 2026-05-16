@@ -17,3 +17,19 @@ export const db = getFirestore(app);
 
 export const CLOUDINARY_CLOUD = "dikoufbd8";
 export const CLOUDINARY_PRESET = "imnufit_10k";
+
+// Clave normalizada del alias para comparar unicidad:
+// minúsculas, sin tildes/acentos y sin espacios duplicados.
+// Así "El Campeón", "el campeon" y "El  Campeon" cuentan como el mismo alias.
+export function normalizeAlias(s) {
+  return (s || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[áàäâã]/g, 'a')
+    .replace(/[éèëê]/g, 'e')
+    .replace(/[íìïî]/g, 'i')
+    .replace(/[óòöôõ]/g, 'o')
+    .replace(/[úùüû]/g, 'u')
+    .replace(/ñ/g, 'n')
+    .replace(/\s+/g, ' ');
+}
