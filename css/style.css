@@ -37,6 +37,14 @@ nav {
 .nav-links { display: flex; gap: 1.5rem; align-items: center; }
 .nav-links a { font-size: 0.9rem; color: var(--text2); transition: color 0.2s; }
 .nav-links a:hover { color: var(--text); }
+.nav-user {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  border: 1px solid var(--border); color: var(--text2);
+  transition: border-color 0.2s, color 0.2s, transform 0.2s;
+}
+.nav-user:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.nav-user svg { display: block; }
 
 /* BUTTONS */
 .btn {
@@ -271,6 +279,20 @@ nav {
 }
 .km-value:focus { outline: none; }
 .km-unit { font-size: 1rem; font-weight: 600; color: var(--text2); flex-shrink: 0; }
+
+/* TOGGLE UNIDAD km / millas */
+.unit-toggle {
+  display: flex; gap: 4px; padding: 4px; margin-bottom: 0.85rem;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.unit-btn {
+  flex: 1; padding: 0.55rem; border-radius: 7px;
+  font-size: 0.85rem; font-weight: 600;
+  background: transparent; color: var(--text2);
+  transition: background 0.2s, color 0.2s;
+}
+.unit-btn.active { background: var(--accent); color: #fff; }
 
 /* CARD */
 .card {

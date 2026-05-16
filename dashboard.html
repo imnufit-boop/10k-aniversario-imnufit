@@ -70,16 +70,20 @@
 
     <form id="runForm">
       <div class="form-group">
-        <label class="form-label">¿Cuántos km corriste?</label>
+        <label class="form-label">¿Cuánto corriste?</label>
+        <div class="unit-toggle">
+          <button type="button" class="unit-btn active" data-unit="km">Kilómetros</button>
+          <button type="button" class="unit-btn" data-unit="mi">Millas</button>
+        </div>
         <div class="km-stepper">
           <button type="button" class="km-btn" id="km-minus" aria-label="Restar">−</button>
           <div class="km-value-wrap">
-            <input type="text" inputmode="decimal" class="km-value" id="km-display" value="1.0" size="3" aria-label="Kilómetros">
-            <span class="km-unit">km</span>
+            <input type="text" inputmode="decimal" class="km-value" id="km-display" value="1.0" size="3" aria-label="Distancia">
+            <span class="km-unit" id="km-unit">km</span>
           </div>
           <button type="button" class="km-btn" id="km-plus" aria-label="Sumar">+</button>
         </div>
-        <div class="form-hint">De 0.0 a 20.0 km por registro</div>
+        <div class="form-hint" id="km-hint">De 0.0 a 20.0 km por registro</div>
       </div>
 
       <div class="form-group">
@@ -174,6 +178,7 @@ auth.onAuthStateChanged(async user => {
     await setDoc(doc(db, 'users', user.uid), {
       name: user.displayName || alias.trim(),
       alias: alias.trim(),
+      aliasLower: alias.trim().toLowerCase(),
       email: user.email,
       totalKm: 0,
       runsCount: 0,
@@ -226,11 +231,12 @@ async function loadRuns() {
       const date = r.createdAt?.toDate();
       const dateStr = date ? date.toLocaleDateString('es', { day:'numeric', month:'short' }) : '';
       const dayStr = (r.day >= 1 && r.day <= 5) ? `Día ${r.day} · ` : '';
+      const miTxt = r.unit === 'mi' ? ` <span style="color:var(--text3);font-weight:500;font-size:0.8rem">(${r.enteredValue} mi)</span>` : '';
       list.innerHTML += `
         <div class="run-item">
           <div class="run-icon">🏃</div>
           <div class="run-info">
-            <div class="run-km">${r.km} km</div>
+            <div class="run-km">${r.km} km${miTxt}</div>
             <div class="run-date">${dayStr}${dateStr}</div>
           </div>
           <div class="run-status">✅ Registrado</div>
@@ -271,34 +277,51 @@ function updateSubmitVisibility() {
 }
 updateSubmitVisibility();
 
-// KM stepper: empieza en 1.0, pasos de 0.1, rango 1.0–20.0
-let kmValue = 1.0;
-const KM_MIN = 0.0, KM_MAX = 20.0, KM_STEP = 0.1;
+// Stepper de distancia: el valor está en la unidad elegida (km o millas)
+let runValue = 1.0;
+let runUnit = 'km';
+const STEP_MIN = 0.0, STEP_MAX = 20.0, STEP = 0.1;
+const MI_TO_KM = 1.609344;
 const kmInput = document.getElementById('km-display');
+
+function toKm(value, unit) {
+  return unit === 'mi' ? Math.round(value * MI_TO_KM * 100) / 100 : value;
+}
 function renderKm() {
-  kmInput.value = kmValue.toFixed(1);
+  kmInput.value = runValue.toFixed(1);
   kmInput.size = Math.max(2, kmInput.value.length);
-  document.getElementById('km-minus').disabled = kmValue <= KM_MIN;
-  document.getElementById('km-plus').disabled = kmValue >= KM_MAX;
+  document.getElementById('km-minus').disabled = runValue <= STEP_MIN;
+  document.getElementById('km-plus').disabled = runValue >= STEP_MAX;
+  document.getElementById('km-unit').textContent = runUnit === 'mi' ? 'mi' : 'km';
+  document.getElementById('km-hint').textContent = runUnit === 'mi'
+    ? `${runValue.toFixed(1)} millas ≈ ${toKm(runValue, 'mi').toFixed(2)} km · se suman en km`
+    : 'De 0.0 a 20.0 km por registro';
 }
 function commitKmInput() {
   let v = parseFloat(kmInput.value.replace(',', '.'));
-  if (isNaN(v)) v = KM_MIN;
-  kmValue = Math.min(KM_MAX, Math.max(KM_MIN, Math.round(v * 10) / 10));
+  if (isNaN(v)) v = STEP_MIN;
+  runValue = Math.min(STEP_MAX, Math.max(STEP_MIN, Math.round(v * 10) / 10));
   renderKm();
 }
 document.getElementById('km-minus').addEventListener('click', () => {
-  kmValue = Math.max(KM_MIN, Math.round((kmValue - KM_STEP) * 10) / 10);
+  runValue = Math.max(STEP_MIN, Math.round((runValue - STEP) * 10) / 10);
   renderKm();
 });
 document.getElementById('km-plus').addEventListener('click', () => {
-  kmValue = Math.min(KM_MAX, Math.round((kmValue + KM_STEP) * 10) / 10);
+  runValue = Math.min(STEP_MAX, Math.round((runValue + STEP) * 10) / 10);
   renderKm();
 });
 kmInput.addEventListener('focus', () => kmInput.select());
 kmInput.addEventListener('input', () => { kmInput.size = Math.max(2, kmInput.value.length || 2); });
 kmInput.addEventListener('change', commitKmInput);
 kmInput.addEventListener('blur', commitKmInput);
+document.querySelectorAll('.unit-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    runUnit = b.dataset.unit;
+    document.querySelectorAll('.unit-btn').forEach(x => x.classList.toggle('active', x === b));
+    renderKm();
+  });
+});
 renderKm();
 
 async function uploadToCloudinary(file) {
@@ -324,7 +347,7 @@ document.getElementById('runForm').addEventListener('submit', async e => {
   if (!screenshotFile) return showError('Por favor sube el screenshot de tu app de running.');
   if (!selfieFile) return showError('Por favor sube tu selfie post-run.');
 
-  const km = kmValue;
+  const km = toKm(runValue, runUnit);
 
   const btn = document.getElementById('run-btn');
   btn.innerHTML = '<span class="spinner"></span> Subiendo...';
@@ -342,6 +365,8 @@ document.getElementById('runForm').addEventListener('submit', async e => {
       userId: currentUser.uid,
       alias: userData.alias,
       km,
+      unit: runUnit,
+      enteredValue: runValue,
       totalKm: newTotal,
       day: getChallengeDay(),
       screenshotUrl,
@@ -363,7 +388,7 @@ document.getElementById('runForm').addEventListener('submit', async e => {
     document.getElementById('preview-selfie').innerHTML = '';
     screenshotFile = null;
     selfieFile = null;
-    kmValue = 1.0;
+    runValue = 1.0;
     renderKm();
     renderProfile();
     loadRuns();
