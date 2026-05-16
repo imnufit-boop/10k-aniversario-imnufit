@@ -27,50 +27,45 @@
 <!-- CONTENIDO ADMIN -->
 <div class="admin-page" id="adminContent" style="display:none;">
 
-  <div style="margin-bottom:2rem;">
-    <h1 style="font-size:1.8rem;font-weight:900;letter-spacing:-1px;margin-bottom:0.25rem;">Panel de Administración</h1>
-    <p style="color:var(--text2);font-size:0.9rem;">Participantes del reto 10K Aniversario IMNUFIT</p>
+  <!-- HERO -->
+  <div class="admin-hero">
+    <div class="admin-hero-inner">
+      <div class="admin-hero-label">🔥 Panel de Administración · 10K Aniversario</div>
+      <div class="admin-hero-km"><span id="heroKm">0.0</span> km</div>
+      <div class="admin-hero-sub">recorridos entre todos los participantes del reto</div>
+    </div>
   </div>
 
   <!-- STATS -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;">
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:1.75rem;font-weight:800;color:var(--accent)" id="aParticipants">—</div>
-      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Participantes</div>
+  <div class="admin-stats">
+    <div class="astat">
+      <div class="astat-icon">👥</div>
+      <div class="astat-num" id="aParticipants">—</div>
+      <div class="astat-label">Participantes</div>
     </div>
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:1.75rem;font-weight:800;color:var(--accent)" id="aRuns">—</div>
-      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Runs registrados</div>
+    <div class="astat">
+      <div class="astat-icon">🏃</div>
+      <div class="astat-num" id="aRuns">—</div>
+      <div class="astat-label">Runs registrados</div>
     </div>
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:1.75rem;font-weight:800;color:var(--accent)" id="aReached5">—</div>
-      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Llegaron a 5K ($25)</div>
+    <div class="astat">
+      <div class="astat-icon">🎖️</div>
+      <div class="astat-num" id="aReached5">—</div>
+      <div class="astat-label">Llegaron a 5K · $25</div>
     </div>
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:1.75rem;font-weight:800;color:var(--green)" id="aCompleted">—</div>
-      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Completaron 10K ($50)</div>
+    <div class="astat is-green">
+      <div class="astat-icon">🏆</div>
+      <div class="astat-num" id="aCompleted">—</div>
+      <div class="astat-label">Completaron 10K · $50</div>
     </div>
   </div>
 
-  <!-- PARTICIPANTS TABLE -->
-  <h2 style="font-size:1.2rem;font-weight:800;margin-bottom:1rem;">Participantes</h2>
-  <div class="admin-table-wrap">
-    <table style="width:100%;border-collapse:collapse;min-width:760px;">
-      <thead>
-        <tr style="border-bottom:1px solid var(--border);">
-          <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;color:var(--text2);font-weight:600;">Alias</th>
-          <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;color:var(--text2);font-weight:600;">Nombre</th>
-          <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;color:var(--text2);font-weight:600;">Email</th>
-          <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;color:var(--text2);font-weight:600;">KM</th>
-          <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;color:var(--text2);font-weight:600;">Runs</th>
-          <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;color:var(--text2);font-weight:600;">Premio</th>
-          <th style="padding:0.85rem 1rem;text-align:right;font-size:0.8rem;color:var(--text2);font-weight:600;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="usersBody">
-        <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3);">Cargando...</td></tr>
-      </tbody>
-    </table>
+  <!-- PARTICIPANTES -->
+  <h2 style="font-size:1.2rem;font-weight:800;margin-bottom:1.25rem;">
+    Clasificación de participantes <span id="pCount" style="color:var(--text3);font-weight:600;"></span>
+  </h2>
+  <div id="participantsList">
+    <div style="text-align:center;color:var(--text3);padding:3rem;">Cargando...</div>
   </div>
 
 </div>
@@ -98,6 +93,10 @@
 import { auth, db, ADMIN_EMAIL } from './js/firebase-config.js';
 import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { collection, getDocs, doc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
+const getEmoji = uid => EMOJIS[uid.charCodeAt(0) % EMOJIS.length];
+const getAvClass = uid => 'av-' + (uid.charCodeAt(0) % 5 + 1);
 
 let allRuns = [];
 
@@ -128,50 +127,70 @@ async function loadAll() {
     .map(d => ({ uid: d.id, ...d.data() }))
     .sort((a, b) => (b.totalKm || 0) - (a.totalKm || 0));
 
-  let reached5 = 0, completed = 0;
+  let totalKm = 0, reached5 = 0, completed = 0;
   users.forEach(u => {
     const km = u.totalKm || 0;
+    totalKm += km;
     if (km >= 5) reached5++;
     if (km >= 10) completed++;
   });
 
+  document.getElementById('heroKm').textContent = totalKm.toFixed(1);
   document.getElementById('aParticipants').textContent = users.length;
   document.getElementById('aRuns').textContent = allRuns.length;
   document.getElementById('aReached5').textContent = reached5;
   document.getElementById('aCompleted').textContent = completed;
+  document.getElementById('pCount').textContent = users.length ? `· ${users.length}` : '';
 
-  renderTable(users);
+  renderParticipants(users);
 }
 
-function renderTable(users) {
-  const body = document.getElementById('usersBody');
+function renderParticipants(users) {
+  const list = document.getElementById('participantsList');
   if (!users.length) {
-    body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3);">Sin participantes todavía</td></tr>';
+    list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:3rem;background:var(--bg2);border:1px solid var(--border);border-radius:16px;">Sin participantes todavía 🏃</div>';
     return;
   }
-  body.innerHTML = '';
-  users.forEach(u => {
+  list.innerHTML = '';
+  users.forEach((u, i) => {
+    const uid = u.uid;
     const km = u.totalKm || 0;
+    const pct = Math.min((km / 10) * 100, 100);
     const done = km >= 10;
-    const premio = done
-      ? '<span class="badge badge-green">$50 OFF</span>'
+    const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
+    const prize = done
+      ? '<span class="badge badge-green">🏆 $50 OFF</span>'
       : km >= 5
-        ? '<span class="badge badge-orange">$25 OFF</span>'
-        : '<span style="color:var(--text3);font-size:0.8rem">—</span>';
+        ? '<span class="badge badge-orange">🎖️ $25 OFF</span>'
+        : '<span class="badge badge-gray">En progreso</span>';
     const alias = (u.alias || '—').replace(/'/g, '&#39;');
-    body.innerHTML += `
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:0.85rem 1rem;font-weight:700;color:var(--accent)">${u.alias || '—'}</td>
-        <td style="padding:0.85rem 1rem;font-size:0.9rem;">${u.name || '—'}</td>
-        <td style="padding:0.85rem 1rem;font-size:0.85rem;color:var(--text2);">${u.email || '—'}</td>
-        <td style="padding:0.85rem 1rem;text-align:center;font-weight:700;color:${done?'var(--green)':'var(--text)'}">${km.toFixed(1)}</td>
-        <td style="padding:0.85rem 1rem;text-align:center;color:var(--text2);">${u.runsCount || 0}</td>
-        <td style="padding:0.85rem 1rem;text-align:center;">${premio}</td>
-        <td style="padding:0.85rem 1rem;text-align:right;white-space:nowrap;">
-          <button class="tbl-btn tbl-btn-view" onclick="showRuns('${u.uid}','${alias}')">Ver runs</button>
-          <button class="tbl-btn tbl-btn-del" onclick="deleteParticipant('${u.uid}','${alias}')">Eliminar</button>
-        </td>
-      </tr>`;
+
+    list.innerHTML += `
+      <div class="pcard ${done ? 'done' : ''}">
+        <div class="pcard-top">
+          <div class="pcard-rank">${rank}</div>
+          <div class="pcard-av ${getAvClass(uid)}">${getEmoji(uid)}</div>
+          <div class="pcard-id">
+            <div class="pcard-alias">${u.alias || '—'}</div>
+            <div class="pcard-sub">${u.name || '—'} · ${u.email || '—'}</div>
+          </div>
+          <div>${prize}</div>
+        </div>
+        <div class="pcard-bar-wrap">
+          <div class="pcard-bar">
+            <div class="pcard-fill ${done ? 'done' : ''}" style="width:${pct}%"></div>
+            <div class="pcard-tick" style="left:50%"></div>
+          </div>
+          <div class="pcard-meta">
+            <div class="pcard-km ${done ? 'done' : ''}"><b>${km.toFixed(1)}</b> / 10 km</div>
+            <div class="pcard-runs">${u.runsCount || 0} ${(u.runsCount||0)===1?'run':'runs'} · ${pct.toFixed(0)}% del reto</div>
+          </div>
+        </div>
+        <div class="pcard-actions">
+          <button class="tbl-btn tbl-btn-view" onclick="showRuns('${uid}','${alias}')">📸 Ver runs</button>
+          <button class="tbl-btn tbl-btn-del" onclick="deleteParticipant('${uid}','${alias}')">🗑 Eliminar</button>
+        </div>
+      </div>`;
   });
 }
 
