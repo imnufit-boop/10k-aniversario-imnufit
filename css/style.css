@@ -400,7 +400,18 @@ nav {
 .run-status { font-size: 0.8rem; }
 
 /* ADMIN */
-.admin-page { padding: 6rem 2rem 4rem; max-width: 900px; margin: 0 auto; }
+.admin-page { padding: 6rem 2rem 4rem; max-width: 980px; margin: 0 auto; }
+.admin-table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; }
+.tbl-btn {
+  padding: 0.4rem 0.75rem; border-radius: 6px;
+  font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.tbl-btn-view { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+.tbl-btn-view:hover { color: var(--text); border-color: var(--accent); }
+.tbl-btn-del { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+.tbl-btn-del:hover { background: rgba(239,68,68,0.2); }
+.admin-denied { padding: 8rem 2rem; text-align: center; color: var(--text2); }
+.admin-denied .lock { font-size: 3rem; margin-bottom: 1rem; }
 .submissions-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
 .submission-card {
   background: var(--bg2); border: 1px solid var(--border);

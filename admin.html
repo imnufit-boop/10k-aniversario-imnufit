@@ -16,90 +16,101 @@
   </div>
 </nav>
 
-<div class="admin-page">
+<!-- ACCESO DENEGADO -->
+<div class="admin-denied" id="denied" style="display:none;">
+  <div class="lock">🔒</div>
+  <h1 style="font-size:1.4rem;font-weight:800;margin-bottom:0.5rem;">Acceso restringido</h1>
+  <p>Este panel es solo para administradores de IMNUFIT.</p>
+  <p style="margin-top:1.5rem;"><a href="index.html" class="btn btn-outline">Volver al inicio</a></p>
+</div>
+
+<!-- CONTENIDO ADMIN -->
+<div class="admin-page" id="adminContent" style="display:none;">
 
   <div style="margin-bottom:2rem;">
     <h1 style="font-size:1.8rem;font-weight:900;letter-spacing:-1px;margin-bottom:0.25rem;">Panel de Administración</h1>
-    <p style="color:var(--text2);font-size:0.9rem;">Valida los runs enviados por los participantes</p>
+    <p style="color:var(--text2);font-size:0.9rem;">Participantes del reto 10K Aniversario IMNUFIT</p>
   </div>
 
   <!-- STATS -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;">
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:1.75rem;font-weight:800;color:var(--accent)" id="aPending">—</div>
-      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Pendientes</div>
-    </div>
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:1.75rem;font-weight:800;color:var(--green)" id="aApproved">—</div>
-      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Aprobados</div>
-    </div>
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:1.75rem;font-weight:800;color:var(--text2)" id="aParticipants">—</div>
+      <div style="font-size:1.75rem;font-weight:800;color:var(--accent)" id="aParticipants">—</div>
       <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Participantes</div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
-      <div style="font-size:1.75rem;font-weight:800;color:var(--green)" id="aCompleted">—</div>
-      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Completaron 10K</div>
+      <div style="font-size:1.75rem;font-weight:800;color:var(--accent)" id="aRuns">—</div>
+      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Runs registrados</div>
     </div>
-  </div>
-
-  <!-- FILTER TABS -->
-  <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;">
-    <button class="atab active" data-filter="pending" style="padding:0.5rem 1.1rem;border-radius:999px;font-size:0.85rem;font-weight:600;background:var(--accent);color:#fff;border:none;cursor:pointer;">⏳ Pendientes</button>
-    <button class="atab" data-filter="approved" style="padding:0.5rem 1.1rem;border-radius:999px;font-size:0.85rem;font-weight:600;background:var(--bg2);color:var(--text2);border:1px solid var(--border);cursor:pointer;">✅ Aprobados</button>
-    <button class="atab" data-filter="rejected" style="padding:0.5rem 1.1rem;border-radius:999px;font-size:0.85rem;font-weight:600;background:var(--bg2);color:var(--text2);border:1px solid var(--border);cursor:pointer;">❌ Rechazados</button>
-    <button class="atab" data-filter="all" style="padding:0.5rem 1.1rem;border-radius:999px;font-size:0.85rem;font-weight:600;background:var(--bg2);color:var(--text2);border:1px solid var(--border);cursor:pointer;">Todos</button>
-  </div>
-
-  <div id="runsList" class="submissions-list">
-    <div style="text-align:center;color:var(--text3);padding:3rem;">Cargando...</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
+      <div style="font-size:1.75rem;font-weight:800;color:var(--accent)" id="aReached5">—</div>
+      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Llegaron a 5K ($25)</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;">
+      <div style="font-size:1.75rem;font-weight:800;color:var(--green)" id="aCompleted">—</div>
+      <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">Completaron 10K ($50)</div>
+    </div>
   </div>
 
   <!-- PARTICIPANTS TABLE -->
-  <div style="margin-top:3rem;">
-    <h2 style="font-size:1.2rem;font-weight:800;margin-bottom:1rem;">Todos los participantes</h2>
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-      <table style="width:100%;border-collapse:collapse;" id="usersTable">
-        <thead>
-          <tr style="border-bottom:1px solid var(--border);">
-            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;color:var(--text2);font-weight:600;">Alias</th>
-            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;color:var(--text2);font-weight:600;">Nombre</th>
-            <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;color:var(--text2);font-weight:600;">Email</th>
-            <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;color:var(--text2);font-weight:600;">KM</th>
-            <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;color:var(--text2);font-weight:600;">Runs</th>
-            <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;color:var(--text2);font-weight:600;">Premio</th>
-          </tr>
-        </thead>
-        <tbody id="usersBody">
-          <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3);">Cargando...</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <h2 style="font-size:1.2rem;font-weight:800;margin-bottom:1rem;">Participantes</h2>
+  <div class="admin-table-wrap">
+    <table style="width:100%;border-collapse:collapse;min-width:760px;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border);">
+          <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;color:var(--text2);font-weight:600;">Alias</th>
+          <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;color:var(--text2);font-weight:600;">Nombre</th>
+          <th style="padding:0.85rem 1rem;text-align:left;font-size:0.8rem;color:var(--text2);font-weight:600;">Email</th>
+          <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;color:var(--text2);font-weight:600;">KM</th>
+          <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;color:var(--text2);font-weight:600;">Runs</th>
+          <th style="padding:0.85rem 1rem;text-align:center;font-size:0.8rem;color:var(--text2);font-weight:600;">Premio</th>
+          <th style="padding:0.85rem 1rem;text-align:right;font-size:0.8rem;color:var(--text2);font-weight:600;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="usersBody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3);">Cargando...</td></tr>
+      </tbody>
+    </table>
   </div>
 
 </div>
 
-<!-- IMAGE MODAL -->
+<!-- MODAL: RUNS DE UN PARTICIPANTE -->
+<div class="modal-overlay" id="runsModal">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);">
+      <div style="font-size:1.1rem;font-weight:800;" id="runsModalTitle">Runs</div>
+      <button onclick="closeRunsModal()" style="background:var(--bg3);border:none;color:var(--text2);width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:1.25rem 1.5rem;overflow-y:auto;" id="runsModalBody"></div>
+  </div>
+</div>
+
+<!-- MODAL: IMAGEN AMPLIADA -->
 <div class="modal-overlay" id="imgModal">
   <div style="max-width:90vw;max-height:90vh;">
     <img id="modalImg" src="" style="max-width:100%;max-height:85vh;border-radius:12px;display:block;">
-    <button onclick="document.getElementById('imgModal').classList.remove('active')" style="margin-top:1rem;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:0.6rem 1.5rem;border-radius:8px;cursor:pointer;width:100%;">Cerrar</button>
+    <button onclick="closeImgModal()" style="margin-top:1rem;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:0.6rem 1.5rem;border-radius:8px;cursor:pointer;width:100%;">Cerrar</button>
   </div>
 </div>
 
 <script type="module">
 import { auth, db } from './js/firebase-config.js';
 import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { collection, getDocs, doc, updateDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { collection, getDocs, doc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const ADMIN_EMAIL = 'frendis@imnufit.com';
+const ADMIN_EMAIL = 'imnufit@gmail.com';
+
+let allRuns = [];
 
 auth.onAuthStateChanged(user => {
   if (!user) { window.location.href = 'register.html'; return; }
-  // Allow any logged-in user for now; add email check in production
-  loadStats();
-  loadRuns('pending');
-  loadUsers();
+  if (user.email !== ADMIN_EMAIL) {
+    document.getElementById('denied').style.display = 'block';
+    return;
+  }
+  document.getElementById('adminContent').style.display = 'block';
+  loadAll();
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -107,97 +118,49 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   window.location.href = 'index.html';
 });
 
-// Filter tabs
-document.querySelectorAll('.atab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.atab').forEach(b => {
-      b.style.background = 'var(--bg2)';
-      b.style.color = 'var(--text2)';
-      b.style.border = '1px solid var(--border)';
-    });
-    btn.style.background = 'var(--accent)';
-    btn.style.color = '#fff';
-    btn.style.border = '1px solid var(--accent)';
-    loadRuns(btn.dataset.filter);
-  });
-});
-
-async function loadStats() {
-  const [runsSnap, usersSnap] = await Promise.all([
-    getDocs(collection(db, 'runs')),
-    getDocs(collection(db, 'users'))
+async function loadAll() {
+  const [usersSnap, runsSnap] = await Promise.all([
+    getDocs(collection(db, 'users')),
+    getDocs(collection(db, 'runs'))
   ]);
-  let pending = 0, approved = 0, completed = 0;
-  runsSnap.forEach(d => {
-    const s = d.data().status;
-    if (s === 'pending') pending++;
-    if (s === 'approved') approved++;
+
+  allRuns = runsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const users = usersSnap.docs
+    .map(d => ({ uid: d.id, ...d.data() }))
+    .sort((a, b) => (b.totalKm || 0) - (a.totalKm || 0));
+
+  let reached5 = 0, completed = 0;
+  users.forEach(u => {
+    const km = u.totalKm || 0;
+    if (km >= 5) reached5++;
+    if (km >= 10) completed++;
   });
-  usersSnap.forEach(d => {
-    if ((d.data().totalKm || 0) >= 10) completed++;
-  });
-  document.getElementById('aPending').textContent = pending;
-  document.getElementById('aApproved').textContent = approved;
-  document.getElementById('aParticipants').textContent = usersSnap.size;
+
+  document.getElementById('aParticipants').textContent = users.length;
+  document.getElementById('aRuns').textContent = allRuns.length;
+  document.getElementById('aReached5').textContent = reached5;
   document.getElementById('aCompleted').textContent = completed;
+
+  renderTable(users);
 }
 
-async function loadRuns(filter) {
-  const container = document.getElementById('runsList');
-  container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:2rem;">Cargando...</div>';
-  let q;
-  if (filter === 'all') {
-    q = query(collection(db, 'runs'), orderBy('createdAt', 'desc'));
-  } else {
-    q = query(collection(db, 'runs'), where('status', '==', filter), orderBy('createdAt', 'desc'));
-  }
-  const snap = await getDocs(q);
-  if (snap.empty) {
-    container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:3rem;">No hay runs en esta categoría</div>';
+function renderTable(users) {
+  const body = document.getElementById('usersBody');
+  if (!users.length) {
+    body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3);">Sin participantes todavía</td></tr>';
     return;
   }
-  container.innerHTML = '';
-  snap.forEach(d => {
-    const r = d.data();
-    const date = r.createdAt?.toDate();
-    const dateStr = date ? date.toLocaleDateString('es', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
-    const statusBadge = {
-      pending: '<span class="badge badge-orange">⏳ Pendiente</span>',
-      approved: '<span class="badge badge-green">✅ Aprobado</span>',
-      rejected: '<span style="background:rgba(239,68,68,0.1);color:#f87171;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:600;">❌ Rechazado</span>'
-    }[r.status] || '';
-
-    container.innerHTML += `
-      <div class="submission-card" id="card-${d.id}">
-        <div class="submission-imgs">
-          <img src="${r.screenshotUrl}" alt="screenshot" onclick="openImg('${r.screenshotUrl}')" title="Screenshot app">
-          <img src="${r.selfieUrl}" alt="selfie" onclick="openImg('${r.selfieUrl}')" title="Selfie">
-        </div>
-        <div class="submission-info">
-          <div class="submission-name">${r.alias || 'Sin alias'}</div>
-          <div class="submission-km">📍 ${r.km} km · Total acumulado: ${(r.totalKm||0).toFixed(1)} km</div>
-          <div style="font-size:0.78rem;color:var(--text3);margin-top:0.2rem">${dateStr}</div>
-          <div style="margin-top:0.5rem">${statusBadge}</div>
-          ${r.status === 'pending' ? `
-          <div class="submission-actions">
-            <button class="btn-approve" onclick="approveRun('${d.id}','${r.userId}',${r.km})">✅ Aprobar</button>
-            <button class="btn-reject" onclick="rejectRun('${d.id}','${r.userId}',${r.km})">❌ Rechazar</button>
-          </div>` : ''}
-        </div>
-      </div>`;
-  });
-}
-
-async function loadUsers() {
-  const body = document.getElementById('usersBody');
-  const snap = await getDocs(query(collection(db, 'users'), orderBy('totalKm', 'desc')));
-  if (snap.empty) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3);">Sin participantes</td></tr>'; return; }
   body.innerHTML = '';
-  snap.forEach(d => {
-    const u = d.data();
+  users.forEach(u => {
     const km = u.totalKm || 0;
     const done = km >= 10;
-    const premio = done ? '<span class="badge badge-green">$50 OFF</span>' : km >= 5 ? '<span class="badge badge-orange">$25 OFF</span>' : '<span style="color:var(--text3);font-size:0.8rem">—</span>';
+    const premio = done
+      ? '<span class="badge badge-green">$50 OFF</span>'
+      : km >= 5
+        ? '<span class="badge badge-orange">$25 OFF</span>'
+        : '<span style="color:var(--text3);font-size:0.8rem">—</span>';
+    const alias = (u.alias || '—').replace(/'/g, '&#39;');
     body.innerHTML += `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:0.85rem 1rem;font-weight:700;color:var(--accent)">${u.alias || '—'}</td>
@@ -206,28 +169,64 @@ async function loadUsers() {
         <td style="padding:0.85rem 1rem;text-align:center;font-weight:700;color:${done?'var(--green)':'var(--text)'}">${km.toFixed(1)}</td>
         <td style="padding:0.85rem 1rem;text-align:center;color:var(--text2);">${u.runsCount || 0}</td>
         <td style="padding:0.85rem 1rem;text-align:center;">${premio}</td>
+        <td style="padding:0.85rem 1rem;text-align:right;white-space:nowrap;">
+          <button class="tbl-btn tbl-btn-view" onclick="showRuns('${u.uid}','${alias}')">Ver runs</button>
+          <button class="tbl-btn tbl-btn-del" onclick="deleteParticipant('${u.uid}','${alias}')">Eliminar</button>
+        </td>
       </tr>`;
   });
 }
 
-window.approveRun = async (runId, userId, km) => {
-  await updateDoc(doc(db, 'runs', runId), { status: 'approved' });
-  document.getElementById('card-' + runId).style.opacity = '0.4';
-  loadStats();
+window.showRuns = (uid, alias) => {
+  const runs = allRuns
+    .filter(r => r.userId === uid)
+    .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+  document.getElementById('runsModalTitle').textContent = `Runs de ${alias}`;
+  const body = document.getElementById('runsModalBody');
+  if (!runs.length) {
+    body.innerHTML = '<div style="text-align:center;color:var(--text3);padding:2rem;">Este participante no ha registrado runs.</div>';
+  } else {
+    body.innerHTML = runs.map(r => {
+      const date = r.createdAt?.toDate();
+      const dateStr = date ? date.toLocaleDateString('es', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+      const dayStr = (r.day >= 1 && r.day <= 5) ? `Día ${r.day} · ` : '';
+      const miStr = r.unit === 'mi' ? ` (${r.enteredValue} mi)` : '';
+      return `
+        <div class="submission-card" style="margin-bottom:1rem;">
+          <div class="submission-imgs">
+            <img src="${r.screenshotUrl}" alt="screenshot" onclick="openImg('${r.screenshotUrl}')" title="Screenshot app">
+            <img src="${r.selfieUrl}" alt="selfie" onclick="openImg('${r.selfieUrl}')" title="Selfie">
+          </div>
+          <div class="submission-info">
+            <div class="submission-km">📍 ${r.km} km${miStr}</div>
+            <div style="font-size:0.78rem;color:var(--text3);margin-top:0.3rem">${dayStr}${dateStr}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+  document.getElementById('runsModal').classList.add('active');
 };
 
-window.rejectRun = async (runId, userId, km) => {
-  const { updateDoc: upd, increment: inc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-  await updateDoc(doc(db, 'runs', runId), { status: 'rejected' });
-  await updateDoc(doc(db, 'users', userId), { totalKm: inc(-km), runsCount: inc(-1) });
-  document.getElementById('card-' + runId).style.opacity = '0.4';
-  loadStats();
+window.closeRunsModal = () => document.getElementById('runsModal').classList.remove('active');
+
+window.deleteParticipant = async (uid, alias) => {
+  if (!confirm(`¿Eliminar a "${alias}"?\n\nSe borrarán su perfil y todos sus runs de forma permanente.`)) return;
+  try {
+    const runsSnap = await getDocs(query(collection(db, 'runs'), where('userId', '==', uid)));
+    await Promise.all(runsSnap.docs.map(d => deleteDoc(d.ref)));
+    await deleteDoc(doc(db, 'users', uid));
+    loadAll();
+  } catch(e) {
+    alert('No se pudo eliminar. Intenta de nuevo.');
+    console.error(e);
+  }
 };
 
 window.openImg = (url) => {
   document.getElementById('modalImg').src = url;
   document.getElementById('imgModal').classList.add('active');
 };
+window.closeImgModal = () => document.getElementById('imgModal').classList.remove('active');
 </script>
 </body>
 </html>
