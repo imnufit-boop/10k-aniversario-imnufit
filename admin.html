@@ -68,20 +68,28 @@
     <span class="admin-search-ico">🔍</span>
     <input type="text" class="admin-search" id="searchInput" placeholder="Buscar por alias, nombre o email...">
   </div>
+  <p style="font-size:0.8rem;color:var(--text3);margin-bottom:1rem;">Toca un participante para ver sus detalles, evidencias y eliminarlo.</p>
   <div id="participantsList">
     <div style="text-align:center;color:var(--text3);padding:3rem;">Cargando...</div>
   </div>
 
 </div>
 
-<!-- MODAL: RUNS DE UN PARTICIPANTE -->
-<div class="modal-overlay" id="runsModal">
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);">
-      <div style="font-size:1.1rem;font-weight:800;" id="runsModalTitle">Runs</div>
-      <button onclick="closeRunsModal()" style="background:var(--bg3);border:none;color:var(--text2);width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;">✕</button>
+<!-- MODAL: DETALLE DEL PARTICIPANTE -->
+<div class="modal-overlay" id="detailModal">
+  <div class="detail-box">
+    <div class="detail-header">
+      <div class="detail-av" id="dAv">🔥</div>
+      <div style="flex:1;min-width:0;">
+        <div class="detail-alias" id="dAlias">—</div>
+        <div class="detail-sub" id="dSub">—</div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
     </div>
-    <div style="padding:1.25rem 1.5rem;overflow-y:auto;" id="runsModalBody"></div>
+    <div class="detail-body" id="dBody"></div>
+    <div class="detail-footer">
+      <button class="detail-del" onclick="deleteFromDetail()">🗑 Eliminar participante</button>
+    </div>
   </div>
 </div>
 
@@ -104,6 +112,7 @@ const getAvClass = uid => 'av-' + (uid.charCodeAt(0) % 5 + 1);
 
 let allRuns = [];
 let allUsers = [];
+let currentDetailUid = null;
 
 auth.onAuthStateChanged(user => {
   if (!user) { window.location.href = 'register.html'; return; }
@@ -175,49 +184,54 @@ function renderParticipants(list) {
   el.innerHTML = list.map(u => {
     const uid = u.uid;
     const km = u.totalKm || 0;
-    const pct = Math.min((km / 10) * 100, 100);
     const done = km >= 10;
     const rank = u._rank;
     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-    const prize = done
-      ? '<span class="badge badge-green">$50</span>'
-      : km >= 5
-        ? '<span class="badge badge-orange">$25</span>'
-        : '<span class="badge badge-gray">—</span>';
-    const alias = (u.alias || '—').replace(/'/g, '&#39;');
     return `
-      <div class="prow ${done ? 'done' : ''}">
+      <div class="prow ${done ? 'done' : ''}" onclick="openDetail('${uid}')">
         <div class="prow-rank">${medal}</div>
         <div class="prow-av ${getAvClass(uid)}">${getEmoji(uid)}</div>
         <div class="prow-id">
           <div class="prow-alias">${u.alias || '—'}</div>
-          <div class="prow-sub">${u.name || '—'} · ${u.email || '—'}</div>
+          <div class="prow-sub">${u.name || '—'}</div>
         </div>
-        <div class="prow-prog">
-          <div class="prow-bar"><div class="prow-fill ${done ? 'done' : ''}" style="width:${pct}%"></div></div>
-        </div>
-        <div class="prow-km ${done ? 'done' : ''}"><b>${km.toFixed(1)}</b> km</div>
-        <div class="prow-prize">${prize}</div>
-        <div class="prow-actions">
-          <button class="prow-ico" title="Ver runs" onclick="showRuns('${uid}','${alias}')">📸</button>
-          <button class="prow-ico del" title="Eliminar" onclick="deleteParticipant('${uid}','${alias}')">🗑</button>
-        </div>
+        <div class="prow-km ${done ? 'done' : ''}"><b>${km.toFixed(1)}</b> <span>km</span></div>
       </div>`;
   }).join('');
 }
 
 document.getElementById('searchInput').addEventListener('input', applySearch);
 
-window.showRuns = (uid, alias) => {
+window.openDetail = (uid) => {
+  const u = allUsers.find(x => x.uid === uid);
+  if (!u) return;
+  currentDetailUid = uid;
+
+  const km = u.totalKm || 0;
+  const pct = Math.min((km / 10) * 100, 100);
+  const done = km >= 10;
+  const done5 = km >= 5;
+
+  document.getElementById('dAv').className = 'detail-av ' + getAvClass(uid);
+  document.getElementById('dAv').textContent = getEmoji(uid);
+  document.getElementById('dAlias').textContent = u.alias || '—';
+  document.getElementById('dSub').textContent = `${u.name || '—'} · ${u.email || '—'}`;
+
+  const prize = done
+    ? '<span class="badge badge-green">🏆 $50 OFF desbloqueado</span>'
+    : done5
+      ? '<span class="badge badge-orange">🎖️ $25 OFF desbloqueado</span>'
+      : '<span class="badge badge-gray">Aún sin premio</span>';
+
   const runs = allRuns
     .filter(r => r.userId === uid)
     .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-  document.getElementById('runsModalTitle').textContent = `Runs de ${alias}`;
-  const body = document.getElementById('runsModalBody');
+
+  let runsHtml;
   if (!runs.length) {
-    body.innerHTML = '<div style="text-align:center;color:var(--text3);padding:2rem;">Este participante no ha registrado runs.</div>';
+    runsHtml = '<div style="text-align:center;color:var(--text3);padding:1.5rem;">Sin runs registrados todavía.</div>';
   } else {
-    body.innerHTML = runs.map(r => {
+    runsHtml = runs.map(r => {
       const date = r.createdAt?.toDate();
       const dateStr = date ? date.toLocaleDateString('es', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
       const dayStr = (r.day >= 1 && r.day <= 5) ? `Día ${r.day} · ` : '';
@@ -235,17 +249,40 @@ window.showRuns = (uid, alias) => {
         </div>`;
     }).join('');
   }
-  document.getElementById('runsModal').classList.add('active');
+
+  document.getElementById('dBody').innerHTML = `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
+      <div style="text-align:center;font-size:2.6rem;font-weight:900;letter-spacing:-1px;line-height:1;color:${done?'var(--green)':'var(--accent)'}">
+        ${km.toFixed(1)}<span style="font-size:1rem;color:var(--text2);font-weight:600;"> / 10 km</span>
+      </div>
+      <div class="big-bar" style="margin-top:1.1rem;">
+        <div class="big-fill ${done?'complete':''}" style="width:${pct}%"></div>
+        <div class="bar-tick" style="left:50%"></div>
+      </div>
+      <div class="milestones">
+        <div class="milestone ${done5?'reached':''}" style="left:50%"><span class="milestone-amt">$25 OFF</span><span class="milestone-km">5 km</span></div>
+        <div class="milestone milestone-end ${done?'reached':''}"><span class="milestone-amt">$50 OFF</span><span class="milestone-km">10 km</span></div>
+      </div>
+      <div style="text-align:center;margin-top:0.85rem;">${prize}</div>
+    </div>
+    <div style="font-weight:800;font-size:1rem;margin-bottom:0.85rem;">Evidencias · ${runs.length} ${runs.length===1?'run':'runs'}</div>
+    ${runsHtml}
+  `;
+
+  document.getElementById('detailModal').classList.add('active');
 };
 
-window.closeRunsModal = () => document.getElementById('runsModal').classList.remove('active');
+window.closeDetail = () => document.getElementById('detailModal').classList.remove('active');
 
-window.deleteParticipant = async (uid, alias) => {
-  if (!confirm(`¿Eliminar a "${alias}"?\n\nSe borrarán su perfil y todos sus runs de forma permanente.`)) return;
+window.deleteFromDetail = async () => {
+  const u = allUsers.find(x => x.uid === currentDetailUid);
+  if (!u) return;
+  if (!confirm(`¿Eliminar a "${u.alias || '—'}"?\n\nSe borrarán su perfil y todos sus runs de forma permanente.`)) return;
   try {
-    const runsSnap = await getDocs(query(collection(db, 'runs'), where('userId', '==', uid)));
+    const runsSnap = await getDocs(query(collection(db, 'runs'), where('userId', '==', currentDetailUid)));
     await Promise.all(runsSnap.docs.map(d => deleteDoc(d.ref)));
-    await deleteDoc(doc(db, 'users', uid));
+    await deleteDoc(doc(db, 'users', currentDetailUid));
+    closeDetail();
     loadAll();
   } catch(e) {
     alert('No se pudo eliminar. Intenta de nuevo.');
