@@ -57,7 +57,7 @@
   </div>
 
   <!-- UPLOAD RUN -->
-  <div class="card" style="margin-bottom:1.5rem;">
+  <div class="card" id="upload-card" style="margin-bottom:1.5rem;">
     <div class="card-title">Registrar un run 🏃</div>
     <div class="card-sub">Sube tu evidencia para sumar kilómetros al reto</div>
 
@@ -160,6 +160,30 @@ function renderDayStrip() {
   else label.textContent = `Día ${day} de 5`;
 }
 renderDayStrip();
+
+function lockUploadCard() {
+  const day = getChallengeDay();
+  if (day !== 0 && day !== 6) return;
+  const card = document.getElementById('upload-card');
+  if (day === 0) {
+    card.innerHTML = `
+      <div class="card-title">Registrar un run 🏃</div>
+      <div style="text-align:center;padding:2.5rem 1rem;">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">⏳</div>
+        <div style="font-size:1.1rem;font-weight:800;margin-bottom:0.5rem;">El reto aún no ha comenzado</div>
+        <div style="color:var(--text2);font-size:0.9rem;line-height:1.6;">Los registros se habilitarán el <strong style="color:var(--accent)">15 de junio</strong>.<br>¡Prepárate para correr! 🔥</div>
+      </div>`;
+  } else {
+    card.innerHTML = `
+      <div class="card-title">Reto finalizado 🏁</div>
+      <div style="text-align:center;padding:2.5rem 1rem;">
+        <div style="font-size:2.5rem;margin-bottom:1rem;">🏆</div>
+        <div style="font-size:1.1rem;font-weight:800;margin-bottom:0.5rem;">El reto ha finalizado</div>
+        <div style="color:var(--text2);font-size:0.9rem;line-height:1.6;">El periodo de registro cerró el 19 de junio.<br>¡Gracias por participar en el 10K Aniversario IMNUFIT!</div>
+      </div>`;
+  }
+}
+lockUploadCard();
 
 let currentUser = null;
 let userData = null;
@@ -344,6 +368,10 @@ function showError(msg) {
 document.getElementById('runForm').addEventListener('submit', async e => {
   e.preventDefault();
   document.getElementById('run-error').classList.remove('show');
+
+  const day = getChallengeDay();
+  if (day === 0) return showError('El reto aún no ha comenzado. Los registros se habilitan el 15 de junio.');
+  if (day === 6) return showError('El periodo de registro ha cerrado. El reto finalizó el 19 de junio.');
 
   if (!screenshotFile) return showError('Por favor sube el screenshot de tu app de running.');
   if (!selfieFile) return showError('Por favor sube tu selfie post-run.');
