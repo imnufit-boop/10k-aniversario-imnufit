@@ -185,14 +185,14 @@ document.getElementById('signupForm').addEventListener('submit', async e => {
     window.location.href = 'dashboard.html';
   } catch(err) {
     const msgs = {
-      'auth/email-already-in-use': 'Este correo ya está registrado. Inicia sesión con tu contraseña. ¿Tienes problemas? <a href="mailto:imnufit@gmail.com" style="color:inherit;font-weight:700;">Contáctanos</a>.',
+      'auth/email-already-in-use': 'Este correo ya está asociado a otro participante. Ingresa con tu contraseña en la pestaña "Iniciar sesión". ¿Tienes dudas? <a href="mailto:imnufit@gmail.com" style="color:inherit;font-weight:700;">Contáctanos</a>.',
       'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
       'auth/invalid-email': 'Email no válido.',
       'auth/network-request-failed': 'Sin conexión. Revisa tu internet e intenta de nuevo.',
       'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos e intenta de nuevo.',
       'auth/operation-not-allowed': 'Registro no habilitado. Contacta al administrador.',
     };
-    showError('signup-error', msgs[err.code] || `Error al registrarse. <a href="mailto:imnufit@gmail.com" style="color:inherit;font-weight:700;">Contáctanos</a> si el problema persiste.`);
+    showError('signup-error', msgs[err.code] || `Puede que este correo ya esté asociado a otro participante. Intenta iniciar sesión o <a href="mailto:imnufit@gmail.com" style="color:inherit;font-weight:700;">contáctanos</a>.`);
     btn.innerHTML = 'Crear cuenta y unirme al reto';
     btn.disabled = false;
   }
