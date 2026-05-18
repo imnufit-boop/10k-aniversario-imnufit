@@ -139,6 +139,7 @@ async function loadAll() {
 
   allUsers = usersSnap.docs
     .map(d => ({ uid: d.id, ...d.data() }))
+    .filter(u => u.email !== ADMIN_EMAIL)
     .sort((a, b) => (b.totalKm || 0) - (a.totalKm || 0));
   allUsers.forEach((u, i) => { u._rank = i + 1; });
 
