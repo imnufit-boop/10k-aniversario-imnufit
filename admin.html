@@ -278,7 +278,7 @@ window.closeDetail = () => document.getElementById('detailModal').classList.remo
 window.deleteFromDetail = async () => {
   const u = allUsers.find(x => x.uid === currentDetailUid);
   if (!u) return;
-  if (!confirm(`¿Eliminar a "${u.alias || '—'}"?\n\nSe borrarán su perfil y todos sus runs de forma permanente.`)) return;
+  if (!confirm(`¿Eliminar a "${u.alias || '—'}"?\n\nSe borrarán su perfil y todos sus runs de Firestore.\n\n⚠️ IMPORTANTE: Si quieres que pueda re-registrarse con el mismo email, ve a Firebase Console → Authentication y elimina su cuenta manualmente.`)) return;
   try {
     const runsSnap = await getDocs(query(collection(db, 'runs'), where('userId', '==', currentDetailUid)));
     await Promise.all(runsSnap.docs.map(d => deleteDoc(d.ref)));
