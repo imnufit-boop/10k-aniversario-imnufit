@@ -61,6 +61,17 @@
 
 </div>
 
+<!-- MODAL: CUENTA ELIMINADA -->
+<div id="deletedOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:500;align-items:center;justify-content:center;padding:1.5rem;">
+  <div style="background:var(--bg2);border:1px solid rgba(239,68,68,0.25);border-radius:20px;padding:2.5rem 2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.6);">
+    <div style="width:68px;height:68px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:1.9rem;">🔒</div>
+    <div style="font-size:1.3rem;font-weight:900;margin-bottom:0.6rem;letter-spacing:-0.5px;">Cuenta eliminada</div>
+    <p style="color:var(--text2);font-size:0.88rem;line-height:1.75;margin-bottom:1.5rem;">Los administradores de <strong>IMNUFIT</strong> han eliminado tu cuenta.<br>Todos tus datos de progreso han sido borrados del sistema.</p>
+    <p style="color:var(--text3);font-size:0.8rem;margin-bottom:2rem;">¿Crees que es un error?<br><a href="mailto:imnufit@gmail.com" style="color:var(--accent);font-weight:600;">imnufit@gmail.com</a></p>
+    <a href="index.html" class="btn btn-primary btn-block">Volver al inicio</a>
+  </div>
+</div>
+
 <footer>
   <p>10K Aniversario <strong>IMNUFIT</strong> · 15–19 Junio 2026</p>
 </footer>
@@ -68,7 +79,7 @@
 <script type="module">
 import { auth, db, ADMIN_EMAIL } from './js/firebase-config.js';
 import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { collection, getDocs, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { collection, getDocs, query, orderBy, limit, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
 function getAvClass(uid) { return 'av-' + (uid.charCodeAt(0) % 5 + 1); }
@@ -81,9 +92,31 @@ function timeAgo(date) {
   return `hace ${Math.floor(diff/86400)}d`;
 }
 
-// Requiere sesión iniciada
+// Requiere sesión iniciada + detección en tiempo real si el admin elimina al participante
+let showingDeletedModal = false;
+let unsubscribeDoc = null;
+
+async function showDeletedModal() {
+  showingDeletedModal = true;
+  document.getElementById('deletedOverlay').style.display = 'flex';
+  try { await signOut(auth); } catch(e) {}
+}
+
 auth.onAuthStateChanged(u => {
+  if (showingDeletedModal) return;
   if (!u) { window.location.href = 'register.html'; return; }
+  if (u.email === ADMIN_EMAIL) return;
+
+  if (unsubscribeDoc) unsubscribeDoc();
+  let docLoaded = false;
+
+  unsubscribeDoc = onSnapshot(doc(db, 'users', u.uid), snap => {
+    if (!snap.exists() && docLoaded) {
+      showDeletedModal();
+      return;
+    }
+    if (snap.exists()) docLoaded = true;
+  });
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {

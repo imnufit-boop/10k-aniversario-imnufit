@@ -123,6 +123,17 @@
 
 </div>
 
+<!-- MODAL: CUENTA ELIMINADA -->
+<div id="deletedOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:500;align-items:center;justify-content:center;padding:1.5rem;">
+  <div style="background:var(--bg2);border:1px solid rgba(239,68,68,0.25);border-radius:20px;padding:2.5rem 2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.6);">
+    <div style="width:68px;height:68px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:1.9rem;">🔒</div>
+    <div style="font-size:1.3rem;font-weight:900;margin-bottom:0.6rem;letter-spacing:-0.5px;">Cuenta eliminada</div>
+    <p style="color:var(--text2);font-size:0.88rem;line-height:1.75;margin-bottom:1.5rem;">Los administradores de <strong>IMNUFIT</strong> han eliminado tu cuenta.<br>Todos tus datos de progreso han sido borrados del sistema.</p>
+    <p style="color:var(--text3);font-size:0.8rem;margin-bottom:2rem;">¿Crees que es un error?<br><a href="mailto:imnufit@gmail.com" style="color:var(--accent);font-weight:600;">imnufit@gmail.com</a></p>
+    <a href="index.html" class="btn btn-primary btn-block">Volver al inicio</a>
+  </div>
+</div>
+
 <!-- RECOVERY MODAL — aparece si el doc de Firestore no se creó durante el registro -->
 <div id="recoveryOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:300;align-items:center;justify-content:center;padding:1.5rem;">
   <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:380px;width:100%;">
@@ -150,7 +161,7 @@
 <script type="module">
 import { auth, db, CLOUDINARY_CLOUD, CLOUDINARY_PRESET, normalizeAlias, ADMIN_EMAIL } from './js/firebase-config.js';
 import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, updateDoc, increment, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
 function getEmoji(uid) { return EMOJIS[uid.charCodeAt(0) % EMOJIS.length]; }
@@ -209,22 +220,42 @@ let currentUser = null;
 let userData = null;
 let screenshotFile = null;
 let selfieFile = null;
+let docLoaded = false;
+let showingDeletedModal = false;
+let unsubscribeDoc = null;
 
-auth.onAuthStateChanged(async user => {
+async function showDeletedModal() {
+  showingDeletedModal = true;
+  document.getElementById('deletedOverlay').style.display = 'flex';
+  try { await signOut(auth); } catch(e) {}
+}
+
+auth.onAuthStateChanged(user => {
+  if (showingDeletedModal) return;
   if (!user) { window.location.href = 'register.html'; return; }
   if (user.email === ADMIN_EMAIL) { window.location.href = 'admin.html'; return; }
   currentUser = user;
-  let snap = await getDoc(doc(db, 'users', user.uid));
-  if (!snap.exists()) {
-    // Recovery: doc was never created (race condition during signup).
-    // Show proper inline modal — do NOT use window.prompt().
-    const overlay = document.getElementById('recoveryOverlay');
-    overlay.style.display = 'flex';
-    return; // La lógica continúa en el handler del modal de abajo
-  }
-  userData = snap.data();
-  renderProfile();
-  loadRuns();
+
+  if (unsubscribeDoc) unsubscribeDoc();
+  docLoaded = false;
+
+  unsubscribeDoc = onSnapshot(doc(db, 'users', user.uid), snap => {
+    if (!snap.exists()) {
+      if (docLoaded) {
+        // El doc existía y fue borrado → admin eliminó al participante
+        showDeletedModal();
+      } else {
+        // Primera carga sin doc → flujo de recuperación de registro
+        document.getElementById('recoveryOverlay').style.display = 'flex';
+      }
+      return;
+    }
+    const firstLoad = !docLoaded;
+    docLoaded = true;
+    userData = snap.data();
+    renderProfile();
+    if (firstLoad) loadRuns();
+  });
 });
 
 // RECOVERY MODAL SUBMIT
