@@ -123,6 +123,26 @@
 
 </div>
 
+<!-- RECOVERY MODAL — aparece si el doc de Firestore no se creó durante el registro -->
+<div id="recoveryOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:300;align-items:center;justify-content:center;padding:1.5rem;">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:380px;width:100%;">
+    <div style="font-size:2rem;text-align:center;margin-bottom:0.5rem;">👋</div>
+    <div style="font-size:1.1rem;font-weight:800;text-align:center;margin-bottom:0.35rem;">Completa tu perfil</div>
+    <p style="color:var(--text2);font-size:0.85rem;text-align:center;margin-bottom:1.5rem;">Solo falta un paso para unirte al reto.</p>
+    <div class="form-group">
+      <label class="form-label">Tu nombre real</label>
+      <input class="form-input" type="text" id="rec-name" placeholder="Ej: María López">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tu alias 🔥</label>
+      <input class="form-input" type="text" id="rec-alias" placeholder='Ej: "La Imparable"' maxlength="20">
+      <div class="form-hint">Aparecerá en el feed público · máx. 20 caracteres</div>
+    </div>
+    <div class="alert alert-error" id="rec-error"></div>
+    <button class="btn btn-primary btn-block btn-lg" id="rec-btn" style="margin-top:0.5rem;">Entrar al reto 🔥</button>
+  </div>
+</div>
+
 <footer>
   <p>10K Aniversario <strong>IMNUFIT</strong> · 15–19 Junio 2026</p>
 </footer>
@@ -196,25 +216,55 @@ auth.onAuthStateChanged(async user => {
   currentUser = user;
   let snap = await getDoc(doc(db, 'users', user.uid));
   if (!snap.exists()) {
-    // Recovery: doc was never created (e.g. setDoc failed during signup).
-    // Ask user for an alias inline and create the doc now.
-    const alias = prompt('Bienvenido de vuelta! Para completar tu registro, ingresa tu alias:');
-    if (!alias || alias.trim().length < 2) { window.location.href = 'register.html'; return; }
-    await setDoc(doc(db, 'users', user.uid), {
-      name: user.displayName || alias.trim(),
-      alias: alias.trim(),
-      aliasKey: normalizeAlias(alias),
-      email: user.email,
-      totalKm: 0,
-      runsCount: 0,
-      completed: false,
-      createdAt: serverTimestamp()
-    });
-    snap = await getDoc(doc(db, 'users', user.uid));
+    // Recovery: doc was never created (race condition during signup).
+    // Show proper inline modal — do NOT use window.prompt().
+    const overlay = document.getElementById('recoveryOverlay');
+    overlay.style.display = 'flex';
+    return; // La lógica continúa en el handler del modal de abajo
   }
   userData = snap.data();
   renderProfile();
   loadRuns();
+});
+
+// RECOVERY MODAL SUBMIT
+document.getElementById('rec-btn').addEventListener('click', async () => {
+  const name = document.getElementById('rec-name').value.trim();
+  const alias = document.getElementById('rec-alias').value.trim();
+  const errEl = document.getElementById('rec-error');
+  errEl.classList.remove('show');
+
+  if (!name) { errEl.textContent = 'Ingresa tu nombre.'; errEl.classList.add('show'); return; }
+  if (alias.length < 2) { errEl.textContent = 'El alias debe tener al menos 2 caracteres.'; errEl.classList.add('show'); return; }
+
+  const btn = document.getElementById('rec-btn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    const aliasKey = normalizeAlias(alias);
+    const dup = await getDocs(query(collection(db, 'users'), where('aliasKey', '==', aliasKey)));
+    if (!dup.empty) {
+      errEl.textContent = 'Ese alias ya está en uso. Elige otro.';
+      errEl.classList.add('show');
+      btn.innerHTML = 'Entrar al reto 🔥'; btn.disabled = false;
+      return;
+    }
+    await setDoc(doc(db, 'users', currentUser.uid), {
+      name, alias, aliasKey,
+      email: currentUser.email,
+      totalKm: 0, runsCount: 0, completed: false,
+      createdAt: serverTimestamp()
+    });
+    userData = { name, alias, aliasKey, email: currentUser.email, totalKm: 0, runsCount: 0 };
+    document.getElementById('recoveryOverlay').style.display = 'none';
+    renderProfile();
+    loadRuns();
+  } catch(e) {
+    errEl.textContent = 'Error al guardar. Intenta de nuevo.';
+    errEl.classList.add('show');
+    btn.innerHTML = 'Entrar al reto 🔥'; btn.disabled = false;
+  }
 });
 
 function renderProfile() {

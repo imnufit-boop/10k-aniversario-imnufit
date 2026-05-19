@@ -95,8 +95,11 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "http
 import { doc, setDoc, getDoc, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // Check if already logged in
+// signingUp = true durante el flujo de registro para evitar que onAuthStateChanged
+// redirija antes de que setDoc termine de guardar el documento en Firestore.
+let signingUp = false;
 auth.onAuthStateChanged(user => {
-  if (user) window.location.href = (user.email === ADMIN_EMAIL) ? 'admin.html' : 'dashboard.html';
+  if (user && !signingUp) window.location.href = (user.email === ADMIN_EMAIL) ? 'admin.html' : 'dashboard.html';
 });
 
 // TABS
@@ -149,6 +152,7 @@ function hideError(id) {
 document.getElementById('signupForm').addEventListener('submit', async e => {
   e.preventDefault();
   hideError('signup-error');
+  signingUp = true; // Evita que onAuthStateChanged redirija antes de que setDoc termine
   const btn = document.getElementById('signup-btn');
   const name = document.getElementById('su-name').value.trim();
   const alias = document.getElementById('su-alias').value.trim();
@@ -192,6 +196,7 @@ document.getElementById('signupForm').addEventListener('submit', async e => {
       'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos e intenta de nuevo.',
       'auth/operation-not-allowed': 'Registro no habilitado. Contacta al administrador.',
     };
+    signingUp = false;
     showError('signup-error', msgs[err.code] || `No se pudo completar el registro. Intenta de nuevo o <a href="mailto:imnufit@gmail.com" style="color:inherit;font-weight:700;">contáctanos</a>.`);
     btn.innerHTML = 'Crear cuenta y unirme al reto';
     btn.disabled = false;
