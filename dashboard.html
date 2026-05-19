@@ -342,151 +342,152 @@ function setupZone(zoneId, fileInputId, previewId, onFile) {
   }
 }
 
-setupZone('zone-screenshot', 'file-screenshot', 'preview-screenshot', f => { screenshotFile = f; updateSubmitVisibility(); });
-setupZone('zone-selfie', 'file-selfie', 'preview-selfie', f => { selfieFile = f; updateSubmitVisibility(); });
+// Solo inicializar el formulario de upload si el reto está activo
+// (lockUploadCard() lo elimina del DOM cuando el reto no ha comenzado o ya terminó)
+if (document.getElementById('runForm')) {
 
-function updateSubmitVisibility() {
-  const ready = !!(screenshotFile && selfieFile);
-  document.getElementById('run-btn').style.display = ready ? '' : 'none';
-  document.getElementById('run-hint').style.display = ready ? 'none' : 'block';
-}
-updateSubmitVisibility();
+  setupZone('zone-screenshot', 'file-screenshot', 'preview-screenshot', f => { screenshotFile = f; updateSubmitVisibility(); });
+  setupZone('zone-selfie', 'file-selfie', 'preview-selfie', f => { selfieFile = f; updateSubmitVisibility(); });
 
-// Stepper de distancia: el valor está en la unidad elegida (km o millas)
-let runValue = 1.0;
-let runUnit = 'km';
-const STEP_MIN = 0.0, STEP_MAX = 20.0, STEP = 0.1;
-const MI_TO_KM = 1.609344;
-const kmInput = document.getElementById('km-display');
+  function updateSubmitVisibility() {
+    const ready = !!(screenshotFile && selfieFile);
+    document.getElementById('run-btn').style.display = ready ? '' : 'none';
+    document.getElementById('run-hint').style.display = ready ? 'none' : 'block';
+  }
+  updateSubmitVisibility();
 
-function toKm(value, unit) {
-  return unit === 'mi' ? Math.round(value * MI_TO_KM * 100) / 100 : value;
-}
-function renderKm() {
-  kmInput.value = runValue.toFixed(1);
-  kmInput.size = Math.max(2, kmInput.value.length);
-  document.getElementById('km-minus').disabled = runValue <= STEP_MIN;
-  document.getElementById('km-plus').disabled = runValue >= STEP_MAX;
-  document.getElementById('km-unit').textContent = runUnit === 'mi' ? 'mi' : 'km';
-  document.getElementById('km-hint').textContent = runUnit === 'mi'
-    ? `${runValue.toFixed(1)} millas ≈ ${toKm(runValue, 'mi').toFixed(2)} km · se suman en km`
-    : 'De 0.0 a 20.0 km por registro';
-}
-function commitKmInput() {
-  let v = parseFloat(kmInput.value.replace(',', '.'));
-  if (isNaN(v)) v = STEP_MIN;
-  runValue = Math.min(STEP_MAX, Math.max(STEP_MIN, Math.round(v * 10) / 10));
-  renderKm();
-}
-document.getElementById('km-minus').addEventListener('click', () => {
-  runValue = Math.max(STEP_MIN, Math.round((runValue - STEP) * 10) / 10);
-  renderKm();
-});
-document.getElementById('km-plus').addEventListener('click', () => {
-  runValue = Math.min(STEP_MAX, Math.round((runValue + STEP) * 10) / 10);
-  renderKm();
-});
-kmInput.addEventListener('focus', () => kmInput.select());
-kmInput.addEventListener('input', () => { kmInput.size = Math.max(2, kmInput.value.length || 2); });
-kmInput.addEventListener('change', commitKmInput);
-kmInput.addEventListener('blur', commitKmInput);
-document.querySelectorAll('.unit-btn').forEach(b => {
-  b.addEventListener('click', () => {
-    runUnit = b.dataset.unit;
-    document.querySelectorAll('.unit-btn').forEach(x => x.classList.toggle('active', x === b));
+  // Stepper de distancia
+  let runValue = 1.0;
+  let runUnit = 'km';
+  const STEP_MIN = 0.0, STEP_MAX = 20.0, STEP = 0.1;
+  const MI_TO_KM = 1.609344;
+  const kmInput = document.getElementById('km-display');
+
+  function toKm(value, unit) {
+    return unit === 'mi' ? Math.round(value * MI_TO_KM * 100) / 100 : value;
+  }
+  function renderKm() {
+    kmInput.value = runValue.toFixed(1);
+    kmInput.size = Math.max(2, kmInput.value.length);
+    document.getElementById('km-minus').disabled = runValue <= STEP_MIN;
+    document.getElementById('km-plus').disabled = runValue >= STEP_MAX;
+    document.getElementById('km-unit').textContent = runUnit === 'mi' ? 'mi' : 'km';
+    document.getElementById('km-hint').textContent = runUnit === 'mi'
+      ? `${runValue.toFixed(1)} millas ≈ ${toKm(runValue, 'mi').toFixed(2)} km · se suman en km`
+      : 'De 0.0 a 20.0 km por registro';
+  }
+  function commitKmInput() {
+    let v = parseFloat(kmInput.value.replace(',', '.'));
+    if (isNaN(v)) v = STEP_MIN;
+    runValue = Math.min(STEP_MAX, Math.max(STEP_MIN, Math.round(v * 10) / 10));
+    renderKm();
+  }
+  document.getElementById('km-minus').addEventListener('click', () => {
+    runValue = Math.max(STEP_MIN, Math.round((runValue - STEP) * 10) / 10);
     renderKm();
   });
-});
-renderKm();
-
-async function uploadToCloudinary(file) {
-  const fd = new FormData();
-  fd.append('file', file);
-  fd.append('upload_preset', CLOUDINARY_PRESET);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
-  const data = await res.json();
-  if (!data.secure_url) throw new Error('Error subiendo imagen');
-  return data.secure_url;
-}
-
-function showError(msg) {
-  const el = document.getElementById('run-error');
-  el.textContent = msg;
-  el.classList.add('show');
-}
-
-document.getElementById('runForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  document.getElementById('run-error').classList.remove('show');
-
-  const day = getChallengeDay();
-  if (day === 0) return showError('El reto aún no ha comenzado. Los registros se habilitan el 15 de junio.');
-  if (day === 6) return showError('El periodo de registro ha cerrado. El reto finalizó el 19 de junio.');
-
-  if (!screenshotFile) return showError('Por favor sube el screenshot de tu app de running.');
-  if (!selfieFile) return showError('Por favor sube tu selfie post-run.');
-
-  const km = toKm(runValue, runUnit);
-
-  const btn = document.getElementById('run-btn');
-  btn.innerHTML = '<span class="spinner"></span> Subiendo...';
-  btn.disabled = true;
-
-  try {
-    const [screenshotUrl, selfieUrl] = await Promise.all([
-      uploadToCloudinary(screenshotFile),
-      uploadToCloudinary(selfieFile)
-    ]);
-
-    const newTotal = (userData.totalKm || 0) + km;
-
-    await addDoc(collection(db, 'runs'), {
-      userId: currentUser.uid,
-      alias: userData.alias,
-      km,
-      unit: runUnit,
-      enteredValue: runValue,
-      totalKm: newTotal,
-      day: getChallengeDay(),
-      screenshotUrl,
-      selfieUrl,
-      status: 'pending',
-      createdAt: serverTimestamp()
-    });
-
-    await updateDoc(doc(db, 'users', currentUser.uid), {
-      totalKm: increment(km),
-      runsCount: increment(1)
-    });
-
-    userData.totalKm = newTotal;
-    userData.runsCount = (userData.runsCount || 0) + 1;
-
-    document.getElementById('runForm').reset();
-    document.getElementById('preview-screenshot').innerHTML = '';
-    document.getElementById('preview-selfie').innerHTML = '';
-    screenshotFile = null;
-    selfieFile = null;
-    runValue = 1.0;
+  document.getElementById('km-plus').addEventListener('click', () => {
+    runValue = Math.min(STEP_MAX, Math.round((runValue + STEP) * 10) / 10);
     renderKm();
-    renderProfile();
-    loadRuns();
+  });
+  kmInput.addEventListener('focus', () => kmInput.select());
+  kmInput.addEventListener('input', () => { kmInput.size = Math.max(2, kmInput.value.length || 2); });
+  kmInput.addEventListener('change', commitKmInput);
+  kmInput.addEventListener('blur', commitKmInput);
+  document.querySelectorAll('.unit-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      runUnit = b.dataset.unit;
+      document.querySelectorAll('.unit-btn').forEach(x => x.classList.toggle('active', x === b));
+      renderKm();
+    });
+  });
+  renderKm();
 
-    btn.classList.add('btn-success');
-    btn.innerHTML = '<span class="check-mark"></span> ¡Run registrado!';
-    setTimeout(() => {
-      btn.classList.remove('btn-success');
+  async function uploadToCloudinary(file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', CLOUDINARY_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error('Error subiendo imagen');
+    return data.secure_url;
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('run-error');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  document.getElementById('runForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    document.getElementById('run-error').classList.remove('show');
+
+    if (!screenshotFile) return showError('Por favor sube el screenshot de tu app de running.');
+    if (!selfieFile) return showError('Por favor sube tu selfie post-run.');
+
+    const km = toKm(runValue, runUnit);
+    const btn = document.getElementById('run-btn');
+    btn.innerHTML = '<span class="spinner"></span> Subiendo...';
+    btn.disabled = true;
+
+    try {
+      const [screenshotUrl, selfieUrl] = await Promise.all([
+        uploadToCloudinary(screenshotFile),
+        uploadToCloudinary(selfieFile)
+      ]);
+
+      const newTotal = (userData.totalKm || 0) + km;
+
+      await addDoc(collection(db, 'runs'), {
+        userId: currentUser.uid,
+        alias: userData.alias,
+        km,
+        unit: runUnit,
+        enteredValue: runValue,
+        totalKm: newTotal,
+        day: getChallengeDay(),
+        screenshotUrl,
+        selfieUrl,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        totalKm: increment(km),
+        runsCount: increment(1)
+      });
+
+      userData.totalKm = newTotal;
+      userData.runsCount = (userData.runsCount || 0) + 1;
+
+      document.getElementById('runForm').reset();
+      document.getElementById('preview-screenshot').innerHTML = '';
+      document.getElementById('preview-selfie').innerHTML = '';
+      screenshotFile = null;
+      selfieFile = null;
+      runValue = 1.0;
+      renderKm();
+      renderProfile();
+      loadRuns();
+
+      btn.classList.add('btn-success');
+      btn.innerHTML = '<span class="check-mark"></span> ¡Run registrado!';
+      setTimeout(() => {
+        btn.classList.remove('btn-success');
+        btn.innerHTML = 'Subir mi run';
+        btn.disabled = false;
+        updateSubmitVisibility();
+      }, 2000);
+    } catch(err) {
+      showError('Error al subir el run. Intenta de nuevo.');
+      console.error(err);
       btn.innerHTML = 'Subir mi run';
       btn.disabled = false;
-      updateSubmitVisibility();
-    }, 2000);
-  } catch(err) {
-    showError('Error al subir el run. Intenta de nuevo.');
-    console.error(err);
-    btn.innerHTML = 'Subir mi run';
-    btn.disabled = false;
-  }
-});
+    }
+  });
+
+} // fin if (runForm)
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await signOut(auth);
