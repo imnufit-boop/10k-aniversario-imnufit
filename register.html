@@ -78,7 +78,12 @@
           <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-btn">
             Entrar al reto
           </button>
+          <div style="text-align:center;margin-top:1rem;">
+            <button type="button" id="forgotBtn" style="background:none;border:none;color:var(--text3);font-size:0.82rem;cursor:pointer;text-decoration:underline;">¿Olvidaste tu contraseña?</button>
+          </div>
         </form>
+        <div class="alert alert-success" id="forgot-success"></div>
+        <div class="alert alert-error" id="forgot-error"></div>
       </div>
 
     </div>
@@ -91,7 +96,7 @@
 
 <script type="module">
 import { auth, db, normalizeAlias, ADMIN_EMAIL } from './js/firebase-config.js';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, setDoc, getDoc, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // Check if already logged in
@@ -200,6 +205,33 @@ document.getElementById('signupForm').addEventListener('submit', async e => {
     showError('signup-error', msgs[err.code] || `No se pudo completar el registro. Intenta de nuevo o <a href="mailto:imnufit@gmail.com" style="color:inherit;font-weight:700;">contáctanos</a>.`);
     btn.innerHTML = 'Crear cuenta y unirme al reto';
     btn.disabled = false;
+  }
+});
+
+// RECUPERAR CONTRASEÑA
+document.getElementById('forgotBtn').addEventListener('click', async () => {
+  const email = document.getElementById('li-email').value.trim();
+  const successEl = document.getElementById('forgot-success');
+  const errorEl = document.getElementById('forgot-error');
+  successEl.classList.remove('show');
+  errorEl.classList.remove('show');
+
+  if (!email) {
+    errorEl.innerHTML = 'Escribe tu email arriba y luego toca "¿Olvidaste tu contraseña?".';
+    errorEl.classList.add('show');
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    successEl.textContent = `Enviamos un enlace de recuperación a ${email}. Revisa tu bandeja de entrada.`;
+    successEl.classList.add('show');
+  } catch(err) {
+    const msgs = {
+      'auth/user-not-found': 'No existe cuenta con ese email.',
+      'auth/invalid-email': 'Email no válido.',
+    };
+    errorEl.innerHTML = msgs[err.code] || `No se pudo enviar el correo. <a href="mailto:imnufit@gmail.com" style="color:inherit;font-weight:700;">Contáctanos</a>.`;
+    errorEl.classList.add('show');
   }
 });
 
