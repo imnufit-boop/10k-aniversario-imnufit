@@ -222,6 +222,7 @@ document.getElementById('forgotBtn').addEventListener('click', async () => {
     return;
   }
   try {
+    auth.languageCode = 'es';
     await sendPasswordResetEmail(auth, email);
     successEl.textContent = `Enviamos un enlace de recuperación a ${email}. Revisa tu bandeja de entrada y también la carpeta de Spam.`;
     successEl.classList.add('show');
