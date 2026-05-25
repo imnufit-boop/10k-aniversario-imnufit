@@ -223,7 +223,7 @@ document.getElementById('forgotBtn').addEventListener('click', async () => {
   }
   try {
     await sendPasswordResetEmail(auth, email);
-    successEl.textContent = `Enviamos un enlace de recuperación a ${email}. Revisa tu bandeja de entrada.`;
+    successEl.textContent = `Enviamos un enlace de recuperación a ${email}. Revisa tu bandeja de entrada y también la carpeta de Spam.`;
     successEl.classList.add('show');
   } catch(err) {
     const msgs = {
