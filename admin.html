@@ -37,23 +37,29 @@
   </div>
 
   <!-- STATS -->
+  <style>
+    .astat { cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+    .astat:hover { transform: translateY(-2px); }
+    .astat.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(249,115,22,0.35); }
+    .astat.is-green.active { border-color: var(--green); box-shadow: 0 0 0 2px rgba(34,197,94,0.35); }
+  </style>
   <div class="admin-stats">
-    <div class="astat">
+    <div class="astat" data-filter="all">
       <div class="astat-icon">👥</div>
       <div class="astat-num" id="aParticipants">—</div>
       <div class="astat-label">Participantes</div>
     </div>
-    <div class="astat">
+    <div class="astat" data-filter="withRuns">
       <div class="astat-icon">🏃</div>
       <div class="astat-num" id="aRuns">—</div>
       <div class="astat-label">Runs registrados</div>
     </div>
-    <div class="astat">
+    <div class="astat" data-filter="reached5">
       <div class="astat-icon">🎖️</div>
       <div class="astat-num" id="aReached5">—</div>
       <div class="astat-label">Llegaron a 5K · $25</div>
     </div>
-    <div class="astat is-green">
+    <div class="astat is-green" data-filter="completed">
       <div class="astat-icon">🏆</div>
       <div class="astat-num" id="aCompleted">—</div>
       <div class="astat-label">Completaron 10K · $50</div>
@@ -113,6 +119,8 @@ const getAvClass = uid => 'av-' + (uid.charCodeAt(0) % 5 + 1);
 let allRuns = [];
 let allUsers = [];
 let currentDetailUid = null;
+let currentFilter = 'all';
+let runsByUser = {};
 
 auth.onAuthStateChanged(user => {
   if (!user) { window.location.href = 'register.html'; return; }
@@ -136,6 +144,11 @@ async function loadAll() {
   ]);
 
   allRuns = runsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  runsByUser = {};
+  allRuns.forEach(r => {
+    if (!runsByUser[r.userId]) runsByUser[r.userId] = 0;
+    runsByUser[r.userId]++;
+  });
 
   allUsers = usersSnap.docs
     .map(d => ({ uid: d.id, ...d.data() }))
@@ -163,18 +176,49 @@ async function loadAll() {
 function applySearch() {
   const q = normalizeAlias(document.getElementById('searchInput').value);
   let list = allUsers;
+
+  if (currentFilter === 'withRuns') {
+    list = list.filter(u => (runsByUser[u.uid] || 0) > 0);
+  } else if (currentFilter === 'reached5') {
+    list = list.filter(u => (u.totalKm || 0) >= 5);
+  } else if (currentFilter === 'completed') {
+    list = list.filter(u => (u.totalKm || 0) >= 10);
+  }
+
   if (q) {
-    list = allUsers.filter(u =>
+    list = list.filter(u =>
       normalizeAlias(u.alias || '').includes(q) ||
       normalizeAlias(u.name || '').includes(q) ||
       normalizeAlias(u.email || '').includes(q)
     );
   }
-  document.getElementById('pCount').textContent = q
-    ? `· ${list.length} de ${allUsers.length}`
-    : (allUsers.length ? `· ${allUsers.length}` : '');
+
+  const filterLabel = {
+    all: '',
+    withRuns: ' · con runs',
+    reached5: ' · llegaron a 5K',
+    completed: ' · completaron 10K'
+  }[currentFilter];
+
+  document.getElementById('pCount').textContent =
+    (q || currentFilter !== 'all')
+      ? `· ${list.length} de ${allUsers.length}${filterLabel}`
+      : (allUsers.length ? `· ${allUsers.length}` : '');
+
+  document.querySelectorAll('.astat').forEach(el => {
+    el.classList.toggle('active', el.dataset.filter === currentFilter && currentFilter !== 'all');
+  });
+
   renderParticipants(list);
 }
+
+document.querySelectorAll('.astat').forEach(el => {
+  el.addEventListener('click', () => {
+    const f = el.dataset.filter;
+    currentFilter = (currentFilter === f || f === 'all') ? 'all' : f;
+    applySearch();
+  });
+});
 
 function renderParticipants(list) {
   const el = document.getElementById('participantsList');
