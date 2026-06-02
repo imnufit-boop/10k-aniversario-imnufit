@@ -129,6 +129,64 @@
 
 </div>
 
+<!-- MODAL: EDITAR RUN -->
+<div id="editRunOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:400;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto;">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.75rem;max-width:420px;width:100%;margin:2rem auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <div style="font-size:1.15rem;font-weight:800;">Editar run ✏️</div>
+      <button id="edit-close" style="background:none;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer;line-height:1;">×</button>
+    </div>
+
+    <div class="alert alert-error" id="edit-error"></div>
+
+    <div class="form-group">
+      <label class="form-label">¿Cuánto corriste?</label>
+      <div class="unit-toggle">
+        <button type="button" class="edit-unit-btn unit-btn active" data-unit="km">Kilómetros</button>
+        <button type="button" class="edit-unit-btn unit-btn" data-unit="mi">Millas</button>
+      </div>
+      <div class="km-stepper">
+        <button type="button" class="km-btn" id="edit-km-minus" aria-label="Restar">−</button>
+        <div class="km-value-wrap">
+          <input type="text" inputmode="decimal" class="km-value" id="edit-km-display" value="1.0" size="3">
+          <span class="km-unit" id="edit-km-unit">km</span>
+        </div>
+        <button type="button" class="km-btn" id="edit-km-plus" aria-label="Sumar">+</button>
+      </div>
+      <div class="form-hint" id="edit-km-hint">De 0.0 a 20.0 km por registro</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Screenshot</label>
+      <div class="upload-zone" id="edit-zone-screenshot">
+        <div class="upload-icon">📍</div>
+        <div class="upload-text">Toca para <strong>reemplazar</strong> el screenshot</div>
+        <div class="upload-preview" id="edit-preview-screenshot"></div>
+      </div>
+      <input type="file" id="edit-file-screenshot" accept="image/*" style="display:none">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Selfie post-run</label>
+      <div class="upload-zone" id="edit-zone-selfie">
+        <div class="upload-icon">🤳</div>
+        <div class="upload-text">Toca para <strong>reemplazar</strong> tu selfie</div>
+        <div class="upload-preview" id="edit-preview-selfie"></div>
+      </div>
+      <input type="file" id="edit-file-selfie" accept="image/*" style="display:none">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Mensaje motivacional <span style="color:var(--text3);font-weight:400;">(opcional)</span></label>
+      <textarea id="edit-message" class="form-input" rows="2" maxlength="100" style="resize:none;font-family:inherit;font-size:0.9rem;"></textarea>
+      <div class="form-hint" id="edit-msg-counter" style="text-align:right;">0 / 100</div>
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg" id="edit-save-btn" style="margin-top:0.5rem;">Guardar cambios</button>
+    <button class="btn btn-ghost btn-block" id="edit-delete-btn" style="margin-top:0.5rem;color:#ef4444;">Eliminar este run</button>
+  </div>
+</div>
+
 <!-- MODAL: CUENTA ELIMINADA -->
 <div id="deletedOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:500;align-items:center;justify-content:center;padding:1.5rem;">
   <div style="background:var(--bg2);border:1px solid rgba(239,68,68,0.25);border-radius:20px;padding:2.5rem 2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.6);">
@@ -167,7 +225,7 @@
 <script type="module">
 import { auth, db, CLOUDINARY_CLOUD, CLOUDINARY_PRESET, normalizeAlias, ADMIN_EMAIL } from './js/firebase-config.js';
 import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, updateDoc, increment, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, updateDoc, deleteDoc, increment, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const EMOJIS = ['🦁','⚡','🔥','💪','🚀','🏃','🎯','👊','🦅','💥'];
 function getEmoji(uid) { return EMOJIS[uid.charCodeAt(0) % EMOJIS.length]; }
@@ -229,6 +287,7 @@ let selfieFile = null;
 let docLoaded = false;
 let showingDeletedModal = false;
 let unsubscribeDoc = null;
+let runsById = {};
 
 async function showDeletedModal() {
   showingDeletedModal = true;
@@ -336,23 +395,30 @@ async function loadRuns() {
     const snap = await getDocs(q);
     if (snap.empty) return;
     const runs = snap.docs
-      .map(d => d.data())
+      .map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+    runsById = {};
     list.innerHTML = '';
     runs.forEach(r => {
+      runsById[r.id] = r;
       const date = r.createdAt?.toDate();
       const dateStr = date ? date.toLocaleDateString('es', { day:'numeric', month:'short' }) : '';
       const dayStr = (r.day >= 1 && r.day <= 5) ? `Día ${r.day} · ` : '';
       const miTxt = r.unit === 'mi' ? ` <span style="color:var(--text3);font-weight:500;font-size:0.8rem">(${r.enteredValue} mi)</span>` : '';
+      const msgTxt = r.message ? `<div style="font-size:0.78rem;color:var(--text2);font-style:italic;margin-top:0.2rem;">"${r.message}"</div>` : '';
       list.innerHTML += `
-        <div class="run-item">
+        <div class="run-item" data-run-id="${r.id}" style="cursor:pointer;">
           <div class="run-icon">🏃</div>
           <div class="run-info">
             <div class="run-km">${r.km} km${miTxt}</div>
             <div class="run-date">${dayStr}${dateStr}</div>
+            ${msgTxt}
           </div>
-          <div class="run-status">✅ Registrado</div>
+          <div class="run-status">✏️</div>
         </div>`;
+    });
+    list.querySelectorAll('.run-item').forEach(el => {
+      el.addEventListener('click', () => openEditModal(el.dataset.runId));
     });
   } catch(e) {
     console.error('Error cargando runs:', e);
@@ -536,6 +602,193 @@ if (document.getElementById('runForm')) {
   });
 
 } // fin if (runForm)
+
+// ============== EDIT RUN MODAL ==============
+const MI_TO_KM_EDIT = 1.609344;
+let editRunId = null;
+let editValue = 1.0;
+let editUnit = 'km';
+let editNewScreenshot = null;
+let editNewSelfie = null;
+
+function toKmEdit(value, unit) {
+  return unit === 'mi' ? Math.round(value * MI_TO_KM_EDIT * 100) / 100 : value;
+}
+function renderEditKm() {
+  const inp = document.getElementById('edit-km-display');
+  inp.value = editValue.toFixed(1);
+  inp.size = Math.max(2, inp.value.length);
+  document.getElementById('edit-km-minus').disabled = editValue <= 0;
+  document.getElementById('edit-km-plus').disabled = editValue >= 20;
+  document.getElementById('edit-km-unit').textContent = editUnit === 'mi' ? 'mi' : 'km';
+  document.getElementById('edit-km-hint').textContent = editUnit === 'mi'
+    ? `${editValue.toFixed(1)} millas ≈ ${toKmEdit(editValue, 'mi').toFixed(2)} km`
+    : 'De 0.0 a 20.0 km por registro';
+}
+
+function openEditModal(runId) {
+  const r = runsById[runId];
+  if (!r) return;
+  editRunId = runId;
+  editNewScreenshot = null;
+  editNewSelfie = null;
+  editValue = r.enteredValue || r.km || 1.0;
+  editUnit = r.unit || 'km';
+
+  document.querySelectorAll('.edit-unit-btn').forEach(b => b.classList.toggle('active', b.dataset.unit === editUnit));
+  renderEditKm();
+
+  document.getElementById('edit-message').value = r.message || '';
+  document.getElementById('edit-msg-counter').textContent = `${(r.message || '').length} / 100`;
+
+  document.getElementById('edit-preview-screenshot').innerHTML = r.screenshotUrl ? `<img src="${r.screenshotUrl}" alt="screenshot">` : '';
+  document.getElementById('edit-preview-selfie').innerHTML = r.selfieUrl ? `<img src="${r.selfieUrl}" alt="selfie">` : '';
+
+  document.getElementById('edit-error').classList.remove('show');
+  document.getElementById('editRunOverlay').style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('editRunOverlay').style.display = 'none';
+  editRunId = null;
+}
+
+document.getElementById('edit-close').addEventListener('click', closeEditModal);
+document.getElementById('editRunOverlay').addEventListener('click', e => {
+  if (e.target.id === 'editRunOverlay') closeEditModal();
+});
+
+document.getElementById('edit-km-minus').addEventListener('click', () => {
+  editValue = Math.max(0, Math.round((editValue - 0.1) * 10) / 10);
+  renderEditKm();
+});
+document.getElementById('edit-km-plus').addEventListener('click', () => {
+  editValue = Math.min(20, Math.round((editValue + 0.1) * 10) / 10);
+  renderEditKm();
+});
+document.getElementById('edit-km-display').addEventListener('blur', () => {
+  let v = parseFloat(document.getElementById('edit-km-display').value.replace(',', '.'));
+  if (isNaN(v)) v = 0;
+  editValue = Math.min(20, Math.max(0, Math.round(v * 10) / 10));
+  renderEditKm();
+});
+document.querySelectorAll('.edit-unit-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    editUnit = b.dataset.unit;
+    document.querySelectorAll('.edit-unit-btn').forEach(x => x.classList.toggle('active', x === b));
+    renderEditKm();
+  });
+});
+
+document.getElementById('edit-message').addEventListener('input', e => {
+  document.getElementById('edit-msg-counter').textContent = `${e.target.value.length} / 100`;
+});
+
+function setupEditZone(zoneId, fileInputId, previewId, onFile) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(fileInputId);
+  zone.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => {
+    const f = input.files[0];
+    if (!f) return;
+    onFile(f);
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById(previewId).innerHTML = `<img src="${ev.target.result}" alt="preview">`;
+    };
+    reader.readAsDataURL(f);
+  });
+}
+setupEditZone('edit-zone-screenshot', 'edit-file-screenshot', 'edit-preview-screenshot', f => { editNewScreenshot = f; });
+setupEditZone('edit-zone-selfie', 'edit-file-selfie', 'edit-preview-selfie', f => { editNewSelfie = f; });
+
+async function uploadCloudinary(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (!data.secure_url) throw new Error('upload failed');
+  return data.secure_url;
+}
+
+document.getElementById('edit-save-btn').addEventListener('click', async () => {
+  if (!editRunId) return;
+  const errEl = document.getElementById('edit-error');
+  errEl.classList.remove('show');
+
+  const original = runsById[editRunId];
+  const newKm = toKmEdit(editValue, editUnit);
+  const delta = newKm - (original.km || 0);
+  const newMessage = document.getElementById('edit-message').value.trim();
+
+  const btn = document.getElementById('edit-save-btn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    let screenshotUrl = original.screenshotUrl;
+    let selfieUrl = original.selfieUrl;
+    if (editNewScreenshot) screenshotUrl = await uploadCloudinary(editNewScreenshot);
+    if (editNewSelfie) selfieUrl = await uploadCloudinary(editNewSelfie);
+
+    await updateDoc(doc(db, 'runs', editRunId), {
+      km: newKm,
+      unit: editUnit,
+      enteredValue: editValue,
+      message: newMessage,
+      screenshotUrl,
+      selfieUrl,
+      totalKm: (userData.totalKm || 0) + delta
+    });
+
+    if (delta !== 0) {
+      await updateDoc(doc(db, 'users', currentUser.uid), { totalKm: increment(delta) });
+      userData.totalKm = (userData.totalKm || 0) + delta;
+      renderProfile();
+    }
+
+    closeEditModal();
+    loadRuns();
+    btn.innerHTML = 'Guardar cambios';
+    btn.disabled = false;
+  } catch (e) {
+    console.error(e);
+    errEl.textContent = 'Error al guardar. Intenta de nuevo.';
+    errEl.classList.add('show');
+    btn.innerHTML = 'Guardar cambios';
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('edit-delete-btn').addEventListener('click', async () => {
+  if (!editRunId) return;
+  if (!confirm('¿Eliminar este run? Esta acción no se puede deshacer.')) return;
+
+  const original = runsById[editRunId];
+  const btn = document.getElementById('edit-delete-btn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    await deleteDoc(doc(db, 'runs', editRunId));
+    await updateDoc(doc(db, 'users', currentUser.uid), {
+      totalKm: increment(-(original.km || 0)),
+      runsCount: increment(-1)
+    });
+    userData.totalKm = Math.max(0, (userData.totalKm || 0) - (original.km || 0));
+    userData.runsCount = Math.max(0, (userData.runsCount || 0) - 1);
+    renderProfile();
+    closeEditModal();
+    loadRuns();
+    btn.innerHTML = 'Eliminar este run';
+    btn.disabled = false;
+  } catch (e) {
+    console.error(e);
+    btn.innerHTML = 'Eliminar este run';
+    btn.disabled = false;
+  }
+});
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await signOut(auth);
