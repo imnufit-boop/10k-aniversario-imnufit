@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Posiciones · 10K Aniversario IMNUFIT</title>
+  <title>Participantes · 10K Aniversario IMNUFIT</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -41,21 +41,21 @@
 
   <!-- TABS -->
   <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0;">
-    <button class="ftab active" data-view="leaderboard" style="padding:0.6rem 1.25rem;background:none;border:none;font-size:0.9rem;font-weight:600;color:var(--text);border-bottom:2px solid var(--accent);margin-bottom:-1px;cursor:pointer;">Clasificación</button>
-    <button class="ftab" data-view="activity" style="padding:0.6rem 1.25rem;background:none;border:none;font-size:0.9rem;font-weight:600;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;">Actividad reciente</button>
-  </div>
-
-  <!-- LEADERBOARD -->
-  <div id="view-leaderboard">
-    <div id="leaderboardList" style="display:flex;flex-direction:column;gap:0.75rem;">
-      <div style="text-align:center;color:var(--text3);padding:3rem;font-size:0.9rem">Cargando clasificación...</div>
-    </div>
+    <button class="ftab active" data-view="activity" style="padding:0.6rem 1.25rem;background:none;border:none;font-size:0.9rem;font-weight:600;color:var(--text);border-bottom:2px solid var(--accent);margin-bottom:-1px;cursor:pointer;">Actividad reciente</button>
+    <button class="ftab" data-view="leaderboard" style="padding:0.6rem 1.25rem;background:none;border:none;font-size:0.9rem;font-weight:600;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;">Posiciones</button>
   </div>
 
   <!-- ACTIVITY -->
-  <div id="view-activity" style="display:none;">
+  <div id="view-activity">
     <div class="feed" id="activityFeed">
       <div style="text-align:center;color:var(--text3);padding:3rem;font-size:0.9rem">Cargando actividad...</div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="view-leaderboard" style="display:none;">
+    <div id="leaderboardList" style="display:flex;flex-direction:column;gap:0.75rem;">
+      <div style="text-align:center;color:var(--text3);padding:3rem;font-size:0.9rem">Cargando clasificación...</div>
     </div>
   </div>
 
@@ -133,8 +133,8 @@ document.querySelectorAll('.ftab').forEach(btn => {
     });
     btn.style.color = 'var(--text)';
     btn.style.borderBottomColor = 'var(--accent)';
-    document.getElementById('view-leaderboard').style.display = btn.dataset.view === 'leaderboard' ? 'block' : 'none';
     document.getElementById('view-activity').style.display = btn.dataset.view === 'activity' ? 'block' : 'none';
+    document.getElementById('view-leaderboard').style.display = btn.dataset.view === 'leaderboard' ? 'block' : 'none';
   });
 });
 
@@ -219,6 +219,7 @@ function loadActivity() {
           <div class="feed-content">
             <div class="feed-name">${r.alias || 'Participante'} ${done ? '<span class="badge badge-green" style="margin-left:0.3rem">✅</span>' : ''}</div>
             <div class="feed-action">corrió <strong style="color:var(--accent)">${r.km} km</strong> · lleva ${(r.totalKm||0).toFixed(1)} km en total</div>
+            ${r.message ? `<div style="margin-top:0.3rem;font-size:0.82rem;color:var(--text2);font-style:italic;">"${r.message}"</div>` : ''}
           </div>
           <div class="feed-meta">
             <div class="feed-km">${r.km}K</div>

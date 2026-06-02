@@ -11,7 +11,7 @@
 <nav>
   <a class="nav-logo" href="index.html">IMNU<span>FIT</span></a>
   <div class="nav-links">
-    <a href="feed.html">Posiciones</a>
+    <a href="feed.html">Participantes</a>
     <button id="logoutBtn" class="btn-ghost btn" style="font-size:0.85rem;">Salir</button>
   </div>
 </nav>
@@ -104,6 +104,12 @@
           <div class="upload-preview" id="preview-selfie"></div>
         </div>
         <input type="file" id="file-selfie" accept="image/*" style="display:none">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Mensaje motivacional <span style="color:var(--text3);font-weight:400;">(opcional)</span></label>
+        <textarea id="run-message" class="form-input" rows="2" maxlength="100" placeholder='Ej: "¡Sin excusas!" 💪' style="resize:none;font-family:inherit;font-size:0.9rem;"></textarea>
+        <div class="form-hint" id="msg-counter" style="text-align:right;">0 / 100</div>
       </div>
 
       <button type="submit" class="btn btn-primary btn-block btn-lg" id="run-btn" style="display:none">
@@ -380,6 +386,13 @@ if (document.getElementById('runForm')) {
   setupZone('zone-screenshot', 'file-screenshot', 'preview-screenshot', f => { screenshotFile = f; updateSubmitVisibility(); });
   setupZone('zone-selfie', 'file-selfie', 'preview-selfie', f => { selfieFile = f; updateSubmitVisibility(); });
 
+  // Contador del mensaje motivacional
+  const msgTextarea = document.getElementById('run-message');
+  const msgCounter = document.getElementById('msg-counter');
+  msgTextarea.addEventListener('input', () => {
+    msgCounter.textContent = `${msgTextarea.value.length} / 100`;
+  });
+
   function updateSubmitVisibility() {
     const ready = !!(screenshotFile && selfieFile);
     document.getElementById('run-btn').style.display = ready ? '' : 'none';
@@ -470,6 +483,8 @@ if (document.getElementById('runForm')) {
 
       const newTotal = (userData.totalKm || 0) + km;
 
+      const runMessage = document.getElementById('run-message').value.trim();
+
       await addDoc(collection(db, 'runs'), {
         userId: currentUser.uid,
         alias: userData.alias,
@@ -480,6 +495,7 @@ if (document.getElementById('runForm')) {
         day: getChallengeDay(),
         screenshotUrl,
         selfieUrl,
+        message: runMessage || '',
         status: 'pending',
         createdAt: serverTimestamp()
       });
@@ -495,6 +511,7 @@ if (document.getElementById('runForm')) {
       document.getElementById('runForm').reset();
       document.getElementById('preview-screenshot').innerHTML = '';
       document.getElementById('preview-selfie').innerHTML = '';
+      document.getElementById('msg-counter').textContent = '0 / 100';
       screenshotFile = null;
       selfieFile = null;
       runValue = 1.0;
