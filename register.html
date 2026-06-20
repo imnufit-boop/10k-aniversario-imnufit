@@ -24,16 +24,22 @@
       <p style="color:var(--text2);font-size:0.9rem;">10K Aniversario IMNUFIT · 15–19 Junio</p>
     </div>
 
-    <!-- TABS -->
-    <div style="display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:1.5rem;">
+    <!-- TABS (ocultos: inscripciones cerradas) -->
+    <div id="tabsBar" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:1.5rem;">
       <button class="tab-btn active" data-tab="signup" style="flex:1;padding:0.6rem;border-radius:7px;font-size:0.9rem;font-weight:600;background:var(--bg3);color:var(--text);border:none;cursor:pointer;transition:all 0.2s;">Registrarse</button>
       <button class="tab-btn" data-tab="login" style="flex:1;padding:0.6rem;border-radius:7px;font-size:0.9rem;font-weight:600;background:transparent;color:var(--text2);border:none;cursor:pointer;transition:all 0.2s;">Iniciar sesión</button>
     </div>
 
     <div class="card" style="padding:1.75rem;">
 
-      <!-- SIGNUP -->
-      <div id="tab-signup">
+      <!-- AVISO INSCRIPCIONES CERRADAS -->
+      <div id="closedNotice" style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.25);border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem;text-align:center;">
+        <div style="font-size:0.95rem;font-weight:800;color:var(--accent);margin-bottom:0.3rem;">🏁 El reto ya finalizó</div>
+        <div style="font-size:0.82rem;color:var(--text2);line-height:1.5;">Las inscripciones están cerradas. Si participaste, inicia sesión para ver tus cupones (válidos hasta el <strong>15 de julio 2026</strong>).</div>
+      </div>
+
+      <!-- SIGNUP (oculto) -->
+      <div id="tab-signup" style="display:none;">
         <div class="alert alert-error" id="signup-error"></div>
         <div class="alert alert-success" id="signup-success"></div>
         <form id="signupForm">
@@ -61,7 +67,7 @@
       </div>
 
       <!-- LOGIN -->
-      <div id="tab-login" style="display:none;">
+      <div id="tab-login">
         <div class="alert alert-error" id="login-error"></div>
         <form id="loginForm">
           <div class="form-group">
@@ -99,9 +105,20 @@ import { auth, db, normalizeAlias, ADMIN_EMAIL } from './js/firebase-config.js';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, setDoc, getDoc, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// Fecha de cierre total: después del 15 jul 2026 nadie (excepto admin) puede entrar
+const LOGIN_CUTOFF = new Date('2026-07-16T00:00:00');
+const isLoginClosed = () => Date.now() >= LOGIN_CUTOFF.getTime();
+
+// Si ya pasó la fecha de cierre, mostrar pantalla de "todo cerrado"
+if (isLoginClosed()) {
+  document.getElementById('closedNotice').innerHTML = `
+    <div style="font-size:0.95rem;font-weight:800;color:var(--accent);margin-bottom:0.3rem;">🔒 Acceso cerrado</div>
+    <div style="font-size:0.82rem;color:var(--text2);line-height:1.5;">El plazo para canjear los cupones del reto 10K Aniversario IMNUFIT terminó el <strong>15 de julio 2026</strong>. ¡Gracias por participar!</div>
+  `;
+  document.getElementById('tab-login').style.display = 'none';
+}
+
 // Check if already logged in
-// signingUp = true durante el flujo de registro para evitar que onAuthStateChanged
-// redirija antes de que setDoc termine de guardar el documento en Firestore.
 let signingUp = false;
 auth.onAuthStateChanged(user => {
   if (user && !signingUp) window.location.href = (user.email === ADMIN_EMAIL) ? 'admin.html' : 'dashboard.html';

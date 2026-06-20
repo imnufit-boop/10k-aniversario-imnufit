@@ -102,10 +102,17 @@ async function showDeletedModal() {
   try { await signOut(auth); } catch(e) {}
 }
 
-auth.onAuthStateChanged(u => {
+const LOGIN_CUTOFF = new Date('2026-07-16T00:00:00');
+
+auth.onAuthStateChanged(async u => {
   if (showingDeletedModal) return;
   if (!u) { window.location.href = 'register.html'; return; }
   if (u.email === ADMIN_EMAIL) return;
+  if (Date.now() >= LOGIN_CUTOFF.getTime()) {
+    try { await signOut(auth); } catch(e) {}
+    window.location.href = 'register.html';
+    return;
+  }
 
   if (unsubscribeDoc) unsubscribeDoc();
   let docLoaded = false;

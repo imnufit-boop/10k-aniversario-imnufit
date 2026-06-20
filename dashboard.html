@@ -323,10 +323,18 @@ async function showDeletedModal() {
   try { await signOut(auth); } catch(e) {}
 }
 
-auth.onAuthStateChanged(user => {
+// Cierre total: después del 15 jul 2026 los participantes son deslogueados
+const LOGIN_CUTOFF = new Date('2026-07-16T00:00:00');
+
+auth.onAuthStateChanged(async user => {
   if (showingDeletedModal) return;
   if (!user) { window.location.href = 'register.html'; return; }
   if (user.email === ADMIN_EMAIL) { window.location.href = 'admin.html'; return; }
+  if (Date.now() >= LOGIN_CUTOFF.getTime()) {
+    try { await signOut(auth); } catch(e) {}
+    window.location.href = 'register.html';
+    return;
+  }
   currentUser = user;
 
   if (unsubscribeDoc) unsubscribeDoc();
